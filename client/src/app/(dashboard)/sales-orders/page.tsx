@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { SalesOrdersView } from "@/components/dashboard/sales-orders/sales-orders-view";
 
 export default function SalesOrdersPage() {
-  return <PlaceholderPage title="Sales Orders" />;
+  return <SalesOrdersView />;
 }

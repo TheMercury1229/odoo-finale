@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -103,16 +103,26 @@ export function JournalEntryCreateForm() {
   });
 
   const { data: accounts = [], isLoading: isLoadingAccounts } = useQuery({
-    queryKey: ["chart-of-accounts"],
+    queryKey: ["chart-of-accounts", "unarchived"],
     queryFn: () => fetchAccounts({ includeArchived: false }),
   });
 
   const { data: contactsResult, isLoading: isLoadingContacts } = useQuery({
-    queryKey: ["contacts", "list"],
+    queryKey: ["contacts", "unarchived"],
     queryFn: () => fetchContacts({ includeArchived: false, view: "list" }),
   });
   const contacts =
     contactsResult && "contacts" in contactsResult ? contactsResult.contacts : [];
+
+  const unarchivedAccounts = useMemo(
+    () => accounts.filter((acc) => !acc.isArchived),
+    [accounts],
+  );
+
+  const unarchivedContacts = useMemo(
+    () => contacts.filter((c) => !c.isArchived),
+    [contacts],
+  );
 
   // Live balancing calculation
   const watchedLines = watch("lines") || [];
@@ -133,7 +143,7 @@ export function JournalEntryCreateForm() {
   const difference = Math.abs(totalDebitCents - totalCreditCents) / 100;
 
   async function onSubmit(data: FormValues) {
-    if (!isBalanced) return;
+    if (!isBalanced || isSubmitting) return;
     setApiError(null);
 
     try {
@@ -177,6 +187,7 @@ export function JournalEntryCreateForm() {
             type="button"
             variant="outline"
             onClick={() => router.push("/journal-entries")}
+            disabled={isSubmitting}
             className="rounded-lg px-4 py-2 font-medium border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
           >
             Cancel
@@ -185,6 +196,7 @@ export function JournalEntryCreateForm() {
             type="button"
             variant="outline"
             onClick={() => router.back()}
+            disabled={isSubmitting}
             className="rounded-lg px-4 py-2 font-medium border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
           >
             <ArrowLeft className="mr-1.5 size-4" />
@@ -328,7 +340,7 @@ export function JournalEntryCreateForm() {
                                       Loading accounts...
                                     </div>
                                   ) : (
-                                    accounts.map((acc) => (
+                                    unarchivedAccounts.map((acc) => (
                                       <SelectItem key={acc.id} value={acc.id}>
                                         {acc.name} ({acc.type})
                                       </SelectItem>
@@ -369,7 +381,7 @@ export function JournalEntryCreateForm() {
                                       Loading contacts...
                                     </div>
                                   ) : (
-                                    contacts.map((c) => (
+                                    unarchivedContacts.map((c) => (
                                       <SelectItem key={c.id} value={c.id}>
                                         {c.name} {c.type ? `(${c.type})` : ""}
                                       </SelectItem>

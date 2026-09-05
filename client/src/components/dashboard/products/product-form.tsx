@@ -189,6 +189,7 @@ export function ProductForm({ product }: ProductFormProps) {
             size="sm"
             className="gap-1.5"
             onClick={() => router.back()}
+            disabled={saveMutation.isPending || archiveMutation.isPending}
           >
             <ArrowLeft className="size-4" />
             Back
@@ -213,6 +214,7 @@ export function ProductForm({ product }: ProductFormProps) {
               size="sm"
               className="gap-1.5"
               onClick={() => setArchiveOpen(true)}
+              disabled={saveMutation.isPending || archiveMutation.isPending}
             >
               {product!.isArchived ? (
                 <ArchiveRestore className="size-4" />
@@ -228,6 +230,7 @@ export function ProductForm({ product }: ProductFormProps) {
             variant="outline"
             size="sm"
             onClick={() => router.push("/products")}
+            disabled={saveMutation.isPending || archiveMutation.isPending}
           >
             Cancel
           </Button>
@@ -237,7 +240,7 @@ export function ProductForm({ product }: ProductFormProps) {
             form="product-form"
             size="sm"
             className="gap-1.5"
-            disabled={saveMutation.isPending}
+            disabled={saveMutation.isPending || archiveMutation.isPending}
           >
             <Check className="size-4" />
             {saveMutation.isPending
@@ -263,7 +266,10 @@ export function ProductForm({ product }: ProductFormProps) {
       {/* ─── Main Form ─── */}
       <form
         id="product-form"
-        onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}
+        onSubmit={form.handleSubmit((values) => {
+          if (saveMutation.isPending || archiveMutation.isPending) return;
+          saveMutation.mutate(values);
+        })}
         className="grid gap-6 lg:grid-cols-[1fr_18rem]"
       >
         {/* ─── Left Column: Details ─── */}
@@ -457,9 +463,15 @@ export function ProductForm({ product }: ProductFormProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={archiveMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => archiveMutation.mutate()}
+              onClick={(e) => {
+                e.preventDefault();
+                if (archiveMutation.isPending) return;
+                archiveMutation.mutate();
+              }}
               disabled={archiveMutation.isPending}
             >
               {archiveMutation.isPending ? "Processing..." : "Confirm"}

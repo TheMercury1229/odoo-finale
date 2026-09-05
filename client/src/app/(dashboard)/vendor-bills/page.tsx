@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { VendorBillsView } from "@/components/dashboard/vendor-bills/vendor-bills-view";
 
 export default function VendorBillsPage() {
-  return <PlaceholderPage title="Vendor Bills" />;
+  return <VendorBillsView />;
 }

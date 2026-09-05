@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { CustomerInvoicesView } from "@/components/dashboard/customer-invoices/customer-invoices-view";
 
 export default function CustomerInvoicesPage() {
-  return <PlaceholderPage title="Customer Invoices" />;
+  return <CustomerInvoicesView />;
 }

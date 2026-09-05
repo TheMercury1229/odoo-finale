@@ -42,7 +42,10 @@ export async function fetchProducts(params: {
   const { data } = await api.get<ProductListResult>("/api/products", {
     params: {
       search: params.search || undefined,
-      includeArchived: params.includeArchived || undefined,
+      includeArchived:
+        typeof params.includeArchived === "boolean"
+          ? String(params.includeArchived)
+          : undefined,
       view: params.view || "list",
     },
   });

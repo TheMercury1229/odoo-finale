@@ -11,7 +11,14 @@ const statement = {
   product: ["create", "update", "archive"],
   chartOfAccounts: ["view", "create", "update", "archive"],
   journal: ["view", "create"],
-  transaction: ["create", "confirm", "record_payment"], // PO/Bill, SO/Invoice
+  transaction: [
+    "view",
+    "create",
+    "update",
+    "confirm",
+    "cancel",
+    "record_payment",
+  ], // PO/Bill, SO/Invoice
   report: ["view"],
 };
 
@@ -37,7 +44,14 @@ export const adminRole = ac.newRole({
   product: ["create", "update", "archive"],
   chartOfAccounts: ["view", "create", "update", "archive"],
   journal: ["view", "create"],
-  transaction: ["create", "confirm", "record_payment"],
+  transaction: [
+    "view",
+    "create",
+    "update",
+    "confirm",
+    "cancel",
+    "record_payment",
+  ],
   report: ["view"],
   member: ["create", "update", "delete"],
   invitation: ["create", "cancel"],
@@ -51,7 +65,14 @@ export const accountantRole = ac.newRole({
   product: ["create", "update"],
   chartOfAccounts: ["view", "create", "update"],
   journal: ["view", "create"],
-  transaction: ["create", "confirm", "record_payment"],
+  transaction: [
+    "view",
+    "create",
+    "update",
+    "confirm",
+    "cancel",
+    "record_payment",
+  ],
   report: ["view"],
 });
 

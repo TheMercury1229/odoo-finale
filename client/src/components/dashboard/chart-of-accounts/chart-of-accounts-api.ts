@@ -70,7 +70,10 @@ export async function fetchAccounts(params?: {
 }) {
   const { data } = await api.get<AccountsResponse>("/api/chart-of-accounts", {
     params: {
-      includeArchived: params?.includeArchived || undefined,
+      includeArchived:
+        typeof params?.includeArchived === "boolean"
+          ? String(params.includeArchived)
+          : undefined,
       search: params?.search || undefined,
     },
   });

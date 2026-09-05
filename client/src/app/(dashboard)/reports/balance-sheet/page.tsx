@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { BalanceSheetView } from "@/components/dashboard/reports/balance-sheet-view";
 
 export default function BalanceSheetPage() {
-  return <PlaceholderPage title="Balance Sheet" />;
+  return <BalanceSheetView />;
 }

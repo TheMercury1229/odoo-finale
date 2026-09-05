@@ -55,7 +55,7 @@ export function JournalCreateDialog({
   const queryClient = useQueryClient();
 
   const { data: accounts = [] } = useQuery({
-    queryKey: ["chart-of-accounts"],
+    queryKey: ["chart-of-accounts", "unarchived"],
     queryFn: () => fetchAccounts({ includeArchived: false }),
     enabled: open,
   });
@@ -216,11 +216,13 @@ export function JournalCreateDialog({
                       <SelectItem value="none">
                         — None (No Default Account) —
                       </SelectItem>
-                      {accounts.map((acc) => (
-                        <SelectItem key={acc.id} value={acc.id}>
-                          {acc.name}
-                        </SelectItem>
-                      ))}
+                      {accounts
+                        .filter((acc) => !acc.isArchived)
+                        .map((acc) => (
+                          <SelectItem key={acc.id} value={acc.id}>
+                            {acc.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 )}

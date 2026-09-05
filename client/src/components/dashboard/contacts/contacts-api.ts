@@ -49,7 +49,10 @@ export async function fetchContacts(params: {
   const { data } = await api.get<ContactListResult>("/api/contacts", {
     params: {
       search: params.search || undefined,
-      includeArchived: params.includeArchived || undefined,
+      includeArchived:
+        typeof params.includeArchived === "boolean"
+          ? String(params.includeArchived)
+          : undefined,
       view: params.view || "list",
     },
   });

@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { ProfitLossView } from "@/components/dashboard/reports/profit-loss-view";
 
 export default function ProfitLossPage() {
-  return <PlaceholderPage title="Profit & Loss" />;
+  return <ProfitLossView />;
 }

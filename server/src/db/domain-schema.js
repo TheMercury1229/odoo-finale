@@ -228,6 +228,7 @@ export const purchaseOrder = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
+    poNumber: text("po_number").notNull(),
     vendorId: text("vendor_id")
       .notNull()
       .references(() => contact.id, { onDelete: "restrict" }),
@@ -240,6 +241,7 @@ export const purchaseOrder = pgTable(
   },
   (t) => [
     index("po_org_idx").on(t.organizationId),
+    uniqueIndex("po_org_number_uidx").on(t.organizationId, t.poNumber),
     index("po_vendor_idx").on(t.vendorId),
     index("po_status_idx").on(t.status),
   ],
@@ -274,7 +276,8 @@ export const vendorBill = pgTable(
     vendorId: text("vendor_id")
       .notNull()
       .references(() => contact.id, { onDelete: "restrict" }),
-    billNumber: text("bill_number"),
+    billNumber: text("bill_number").notNull(),
+    vendorReference: text("vendor_reference"),
     invoiceDate: date("invoice_date").notNull(),
     dueDate: date("due_date"),
     totalAmount: numeric("total_amount", { precision: 14, scale: 2 }).notNull(),
@@ -288,6 +291,7 @@ export const vendorBill = pgTable(
   },
   (t) => [
     index("vb_org_idx").on(t.organizationId),
+    uniqueIndex("vb_org_number_uidx").on(t.organizationId, t.billNumber),
     index("vb_vendor_idx").on(t.vendorId),
     index("vb_po_idx").on(t.purchaseOrderId),
     index("vb_status_idx").on(t.status),
@@ -308,6 +312,7 @@ export const salesOrder = pgTable(
     customerId: text("customer_id")
       .notNull()
       .references(() => contact.id, { onDelete: "restrict" }),
+    soNumber: text("so_number").notNull(),
     status: docStatusEnum("status").default("draft").notNull(),
     orderDate: date("order_date").notNull(),
     createdBy: text("created_by")
@@ -317,6 +322,7 @@ export const salesOrder = pgTable(
   },
   (t) => [
     index("so_org_idx").on(t.organizationId),
+    uniqueIndex("so_org_number_uidx").on(t.organizationId, t.soNumber),
     index("so_customer_idx").on(t.customerId),
     index("so_status_idx").on(t.status),
   ],
@@ -354,7 +360,7 @@ export const customerInvoice = pgTable(
     customerId: text("customer_id")
       .notNull()
       .references(() => contact.id, { onDelete: "restrict" }),
-    invoiceNumber: text("invoice_number"),
+    invoiceNumber: text("invoice_number").notNull(),
     invoiceDate: date("invoice_date").notNull(),
     dueDate: date("due_date"),
     totalAmount: numeric("total_amount", { precision: 14, scale: 2 }).notNull(),
@@ -366,6 +372,7 @@ export const customerInvoice = pgTable(
   },
   (t) => [
     index("ci_org_idx").on(t.organizationId),
+    uniqueIndex("ci_org_number_uidx").on(t.organizationId, t.invoiceNumber),
     index("ci_customer_idx").on(t.customerId), // Contact-role portal filters on this constantly
     index("ci_so_idx").on(t.salesOrderId),
     index("ci_status_idx").on(t.status),
@@ -383,6 +390,7 @@ export const payment = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
+    paymentNumber: text("payment_number").notNull(),
     direction: paymentDirectionEnum("direction").notNull(), // inbound = from customer, outbound = to vendor
     method: paymentMethodEnum("method").notNull(),
     amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
@@ -407,6 +415,7 @@ export const payment = pgTable(
   },
   (t) => [
     index("payment_org_idx").on(t.organizationId),
+    uniqueIndex("payment_org_number_uidx").on(t.organizationId, t.paymentNumber),
     index("payment_bill_idx").on(t.vendorBillId),
     index("payment_invoice_idx").on(t.customerInvoiceId),
     check(
