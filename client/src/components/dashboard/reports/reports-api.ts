@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+export { formatCurrency } from "@/lib/utils";
 
 export interface ReportAccountLine {
   accountId: string;
@@ -25,18 +26,6 @@ export interface ProfitLossResponse {
   expenses: ReportAccountLine[];
   totalExpenses: number;
   netProfit: number;
-}
-
-export function formatCurrency(amount: number): string {
-  const num = Number(amount || 0);
-  const formatted = Math.abs(num).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  if (num < 0) {
-    return `-Rs. ${formatted}`;
-  }
-  return `Rs. ${formatted}`;
 }
 
 export async function fetchBalanceSheet(params?: { asOf?: string }) {

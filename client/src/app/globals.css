@@ -49,6 +49,9 @@
 }
 
 :root {
+  --page-padding: 1.25rem;
+  --card-gap: 1.25rem;
+  --section-gap: 1.5rem;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.148 0.004 228.8);
   --popover: oklch(1 0 0);
@@ -138,7 +141,6 @@
 /* ============================================================ */
 
 @media print {
-
   /* 1. Page setup — consistent margins on every print job */
   @page {
     size: A4;

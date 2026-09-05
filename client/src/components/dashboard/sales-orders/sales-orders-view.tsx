@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { Plus, Search, ShoppingBag } from "lucide-react";
 
 import { authClient } from "@/lib/auth";
+import { DataTable } from "@/components/primitives/DataTable";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { useSalesOrders } from "./sales-orders-hooks";
 import type { SalesOrderStatus } from "./sales-orders-api";
 import { Badge } from "@/components/ui/badge";
@@ -22,50 +25,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function formatDate(dateStr: string) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 export function getSalesOrderStatusBadge(status: SalesOrderStatus) {
-  switch (status) {
-    case "confirmed":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white capitalize">
-          Confirmed
-        </Badge>
-      );
-    case "cancelled":
-      return (
-        <Badge variant="destructive" className="capitalize">
-          Cancelled
-        </Badge>
-      );
-    case "draft":
-    default:
-      return (
-        <Badge variant="secondary" className="capitalize font-medium">
-          Draft
-        </Badge>
-      );
-  }
+  const labels: Record<SalesOrderStatus, string> = {
+    confirmed: "Confirmed",
+    cancelled: "Cancelled",
+    draft: "Draft",
+  };
+  return <StatusBadge status={labels[status] || "Draft"} />;
 }
 
 export function SalesOrdersView() {
@@ -83,7 +49,11 @@ export function SalesOrdersView() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data: salesOrders = [], isLoading, isError } = useSalesOrders({
+  const {
+    data: salesOrders = [],
+    isLoading,
+    isError,
+  } = useSalesOrders({
     search,
     status: statusFilter,
   });
@@ -145,71 +115,69 @@ export function SalesOrdersView() {
       </div>
 
       {/* ─── Main Table Card ─── */}
-      <Card className="border border-border/80 shadow-xs">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex min-h-64 items-center justify-center">
-              <Spinner />
-            </div>
-          ) : isError ? (
-            <div className="py-16 text-center text-sm text-destructive">
-              Failed to load sales orders. Please try refreshing.
-            </div>
-          ) : salesOrders.length === 0 ? (
-            <div className="py-16 text-center text-sm text-muted-foreground flex flex-col items-center gap-3">
-              <ShoppingBag className="size-10 text-muted-foreground/50" />
-              <p className="font-medium">No sales orders found.</p>
-              {canCreate && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  nativeButton={false}
-                  render={<Link href="/sales-orders/new" />}
+      <DataTable className="border-border/80">
+        {isLoading ? (
+          <div className="flex min-h-64 items-center justify-center">
+            <Spinner />
+          </div>
+        ) : isError ? (
+          <div className="py-16 text-center text-sm text-destructive">
+            Failed to load sales orders. Please try refreshing.
+          </div>
+        ) : salesOrders.length === 0 ? (
+          <div className="py-16 text-center text-sm text-muted-foreground flex flex-col items-center gap-3">
+            <ShoppingBag className="size-10 text-muted-foreground/50" />
+            <p className="font-medium">No sales orders found.</p>
+            {canCreate && (
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={<Link href="/sales-orders/new" />}
+              >
+                Create your first Sales Order
+              </Button>
+            )}
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="w-36 font-semibold">Order No.</TableHead>
+                <TableHead className="font-semibold">Customer Name</TableHead>
+                <TableHead className="w-36 font-semibold">Order Date</TableHead>
+                <TableHead className="w-32 font-semibold">Status</TableHead>
+                <TableHead className="w-40 text-right font-semibold">
+                  Total
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {salesOrders.map((so) => (
+                <TableRow
+                  key={so.id}
+                  onClick={() => router.push(`/sales-orders/${so.id}`)}
+                  className="cursor-pointer hover:bg-muted/30 transition-colors"
                 >
-                  Create your first Sales Order
-                </Button>
-              )}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="w-36 font-semibold">Order No.</TableHead>
-                  <TableHead className="font-semibold">Customer Name</TableHead>
-                  <TableHead className="w-36 font-semibold">Order Date</TableHead>
-                  <TableHead className="w-32 font-semibold">Status</TableHead>
-                  <TableHead className="w-40 text-right font-semibold">
-                    Total
-                  </TableHead>
+                  <TableCell className="font-mono font-semibold text-primary">
+                    {so.soNumber}
+                  </TableCell>
+                  <TableCell className="font-medium text-foreground">
+                    {so.customerName || "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(so.orderDate)}
+                  </TableCell>
+                  <TableCell>{getSalesOrderStatusBadge(so.status)}</TableCell>
+                  <TableCell className="text-right font-mono font-semibold text-foreground">
+                    {formatCurrency(so.total)}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {salesOrders.map((so) => (
-                  <TableRow
-                    key={so.id}
-                    onClick={() => router.push(`/sales-orders/${so.id}`)}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
-                  >
-                    <TableCell className="font-mono font-semibold text-primary">
-                      {so.soNumber}
-                    </TableCell>
-                    <TableCell className="font-medium text-foreground">
-                      {so.customerName || "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(so.orderDate)}
-                    </TableCell>
-                    <TableCell>{getSalesOrderStatusBadge(so.status)}</TableCell>
-                    <TableCell className="text-right font-mono font-semibold text-foreground">
-                      {formatCurrency(so.total)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </DataTable>
     </div>
   );
 }

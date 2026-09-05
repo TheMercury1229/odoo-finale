@@ -6,8 +6,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   Calendar,
-  CheckCircle2,
-  PieChart,
   PiggyBank,
   Printer,
   Target,
@@ -18,6 +16,7 @@ import {
 
 import { useBudgetReport } from "./reports-hooks";
 import { formatCurrency, type BudgetReportItem } from "./reports-api";
+import { formatDate } from "@/lib/utils";
 import { triggerPrint } from "@/lib/print";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,36 +44,21 @@ function getTodayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function formatDate(dateStr: string) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
 export function BudgetReportView() {
   const router = useRouter();
   const [asOf, setAsOf] = useState(getTodayString);
 
-  const { data: report = [], isLoading, isError } = useBudgetReport({
+  const {
+    data: report = [],
+    isLoading,
+    isError,
+  } = useBudgetReport({
     asOf: asOf || undefined,
   });
 
   const totalPlanned = report.reduce((sum, b) => sum + b.plannedAmount, 0);
   const totalActual = report.reduce((sum, b) => sum + b.actualAmount, 0);
   const totalVariance = totalPlanned - totalActual;
-  const overallPercent =
-    totalPlanned > 0
-      ? Math.round(((totalActual / totalPlanned) * 100 + Number.EPSILON) * 100) / 100
-      : 0;
-
   const overBudgetCount = report.filter((b) => b.percentUsed > 100).length;
 
   const handlePrint = () => {
@@ -84,9 +68,9 @@ export function BudgetReportView() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex min-w-0 w-full max-w-6xl flex-col gap-6 overflow-x-hidden">
       {/* ─── Top Action Bar ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-4 shadow-xs print:hidden">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-4 shadow-xs print:hidden">
         <div className="flex items-center gap-2">
           <Button
             type="button"
@@ -98,7 +82,7 @@ export function BudgetReportView() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           <Label
             htmlFor="asOfDate"
             className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
@@ -121,7 +105,7 @@ export function BudgetReportView() {
           variant="outline"
           size="sm"
           onClick={() => router.push("/budgets")}
-          className="gap-2"
+          className="shrink-0 gap-2"
         >
           <ArrowLeft className="size-4" />
           View Budgets
@@ -129,14 +113,14 @@ export function BudgetReportView() {
       </div>
 
       {/* ─── Printable Document Header ─── */}
-      <div className="flex flex-col gap-1 border-b pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+      <div className="flex min-w-0 flex-col gap-1 border-b pb-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Target className="size-5" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            <div className="min-w-0">
+              <h1 className="wrap-break-word text-2xl font-bold tracking-tight text-foreground">
                 Budget Performance Report
               </h1>
               <p className="text-xs text-muted-foreground">
@@ -145,7 +129,7 @@ export function BudgetReportView() {
               </p>
             </div>
           </div>
-          <div className="text-right">
+          <div className="shrink-0 text-right">
             <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               As Of Date
             </div>
@@ -157,8 +141,8 @@ export function BudgetReportView() {
       </div>
 
       {/* ─── Summary Metric Cards (hidden in print) ─── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 print:hidden">
-        <Card className="shadow-xs">
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3 print:hidden">
+        <Card className="min-w-0 shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Total Planned
@@ -167,15 +151,18 @@ export function BudgetReportView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
-              {formatCurrency(totalPlanned)}
+              <span className="break-all text-xl sm:text-2xl">
+                {formatCurrency(totalPlanned)}
+              </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Across {report.length} active {report.length === 1 ? "budget" : "budgets"}
+              Across {report.length} active{" "}
+              {report.length === 1 ? "budget" : "budgets"}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs">
+        <Card className="min-w-0 shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Total Actual
@@ -184,7 +171,9 @@ export function BudgetReportView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
-              {formatCurrency(totalActual)}
+              <span className="break-all text-xl sm:text-2xl">
+                {formatCurrency(totalActual)}
+              </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Posted journal activity as of {formatDate(asOf)}
@@ -192,7 +181,7 @@ export function BudgetReportView() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs">
+        <Card className="min-w-0 shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Net Variance
@@ -205,238 +194,306 @@ export function BudgetReportView() {
                 totalVariance < 0 ? "text-destructive" : "text-emerald-600"
               }`}
             >
-              {formatCurrency(totalVariance)}
+              <span className="break-all text-xl sm:text-2xl">
+                {formatCurrency(totalVariance)}
+              </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {totalVariance >= 0
                 ? "Remaining budget capacity"
                 : "Overall budget overrun"}
             </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Budget Health
-            </CardTitle>
-            <PieChart className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold font-mono tracking-tight text-foreground">
-                {overallPercent}%
-              </span>
-              {overBudgetCount > 0 ? (
-                <Badge variant="destructive" className="gap-1 text-xs font-medium">
-                  <AlertTriangle className="size-3" />
-                  {overBudgetCount} Over Budget
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs font-medium gap-1"
-                >
-                  <CheckCircle2 className="size-3" />
-                  On Track
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {overBudgetCount === 0
-                ? "All budgets within planned limits"
-                : `${overBudgetCount} budget(s) exceeded 100% capacity`}
-            </p>
+            {overBudgetCount > 0 ? (
+              <Badge variant="destructive" className="mt-2 w-fit text-xs">
+                {overBudgetCount} over budget
+              </Badge>
+            ) : null}
           </CardContent>
         </Card>
       </div>
 
       {/* ─── Main Performance Table ─── */}
-      <div className="overflow-hidden rounded-lg border bg-card shadow-xs">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="font-semibold text-foreground">
-                Budget Name
-              </TableHead>
-              <TableHead className="font-semibold text-foreground">
-                Analytic Account
-              </TableHead>
-              <TableHead className="font-semibold text-foreground">
-                Period
-              </TableHead>
-              <TableHead className="font-semibold text-foreground">
-                Responsible Person
-              </TableHead>
-              <TableHead className="text-right font-semibold text-foreground">
-                Planned Amount
-              </TableHead>
-              <TableHead className="text-right font-semibold text-foreground">
-                Actual Amount
-              </TableHead>
-              <TableHead className="text-right font-semibold text-foreground">
-                Variance
-              </TableHead>
-              <TableHead className="text-right font-semibold text-foreground">
-                % Used
-              </TableHead>
-            </TableRow>
-          </TableHeader>
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-lg border bg-card shadow-xs md:block">
+        <div className="w-full overflow-x-auto">
+          <Table className="min-w-200">
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="font-semibold text-foreground">
+                  Budget Name
+                </TableHead>
+                <TableHead className="font-semibold text-foreground">
+                  Period
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Planned Amount
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Actual Amount
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Variance
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  % Used
+                </TableHead>
+              </TableRow>
+            </TableHeader>
 
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-48 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Spinner className="size-6 text-primary" />
-                    <p className="text-xs text-muted-foreground">
-                      Calculating budget actuals...
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : report.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="h-48 text-center text-sm text-muted-foreground"
-                >
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="rounded-full bg-muted p-3">
-                      <Target className="size-6 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        No budgets found for this organization
-                      </p>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Spinner className="size-6 text-primary" />
                       <p className="text-xs text-muted-foreground">
-                        Create budgets to monitor spending and revenue actuals.
+                        Calculating budget actuals...
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => router.push("/budgets/new")}
-                      className="gap-2 mt-1"
+                  </TableCell>
+                </TableRow>
+              ) : report.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="h-48 text-center text-sm text-muted-foreground"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="rounded-full bg-muted p-3">
+                        <Target className="size-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          No budgets found for this organization
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Create budgets to monitor spending and revenue
+                          actuals.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => router.push("/budgets/new")}
+                        className="gap-2 mt-1"
+                      >
+                        <PiggyBank className="size-4" />
+                        Create Budget
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                report.map((b) => {
+                  const isOverBudget = b.percentUsed > 100;
+                  return (
+                    <TableRow
+                      key={b.budgetId}
+                      onClick={() => router.push(`/budgets/${b.budgetId}`)}
+                      className={`cursor-pointer transition-colors hover:bg-muted/30 ${
+                        isOverBudget
+                          ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive"
+                          : ""
+                      }`}
                     >
-                      <PiggyBank className="size-4" />
-                      Create Budget
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              report.map((b) => {
-                const isOverBudget = b.percentUsed > 100;
-                return (
-                  <TableRow
-                    key={b.budgetId}
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isOverBudget
-                        ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive"
-                        : ""
+                      <TableCell className="font-medium text-foreground">
+                        <div className="flex flex-col">
+                          <span>{b.budgetName}</span>
+                          {isOverBudget && (
+                            <span className="text-[11px] font-medium text-destructive flex items-center gap-1 mt-0.5">
+                              <AlertTriangle className="size-3 inline" />
+                              Over budget by{" "}
+                              {formatCurrency(Math.abs(b.variance))}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(b.periodStart)} – {formatDate(b.periodEnd)}
+                      </TableCell>
+
+                      <TableCell className="text-right font-mono text-sm tabular-nums text-foreground">
+                        {formatCurrency(b.plannedAmount)}
+                      </TableCell>
+
+                      <TableCell className="text-right font-mono text-sm tabular-nums font-medium text-foreground">
+                        {formatCurrency(b.actualAmount)}
+                      </TableCell>
+
+                      <TableCell
+                        className={`text-right font-mono text-sm tabular-nums font-medium ${
+                          b.variance < 0
+                            ? "text-destructive"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {formatCurrency(b.variance)}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        {isOverBudget ? (
+                          <Badge
+                            variant="destructive"
+                            className="font-mono text-xs font-semibold px-2 py-0.5"
+                          >
+                            {b.percentUsed}%
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className={
+                              b.percentUsed >= 80
+                                ? "bg-amber-500/10 text-amber-600 border-amber-500/20 font-mono text-xs font-semibold px-2 py-0.5"
+                                : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-mono text-xs font-semibold px-2 py-0.5"
+                            }
+                          >
+                            {b.percentUsed}%
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+
+            {report.length > 0 && (
+              <TableFooter className="bg-muted/40 font-semibold border-t">
+                <TableRow className="hover:bg-muted/40">
+                  <TableCell colSpan={2} className="text-foreground">
+                    Total Organization Budgets
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums text-foreground">
+                    {formatCurrency(totalPlanned)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums text-foreground">
+                    {formatCurrency(totalActual)}
+                  </TableCell>
+                  <TableCell
+                    className={`text-right font-mono tabular-nums ${
+                      totalVariance < 0 ? "text-destructive" : "text-foreground"
                     }`}
                   >
-                    <TableCell className="font-medium text-foreground">
-                      <div className="flex flex-col">
-                        <span>{b.budgetName}</span>
-                        {isOverBudget && (
-                          <span className="text-[11px] font-medium text-destructive flex items-center gap-1 mt-0.5">
-                            <AlertTriangle className="size-3 inline" />
-                            Over budget by {formatCurrency(Math.abs(b.variance))}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
+                    {formatCurrency(totalVariance)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Badge
+                      variant={totalVariance < 0 ? "destructive" : "secondary"}
+                      className="font-mono text-xs font-semibold"
+                    >
+                      {totalPlanned > 0
+                        ? `${Math.round((totalActual / totalPlanned) * 100)}%`
+                        : "0%"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            )}
+          </Table>
+        </div>
+      </div>
 
-                    <TableCell className="text-sm font-medium text-foreground">
-                      {b.analyticAccountName}
-                    </TableCell>
-
-                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {formatDate(b.periodStart)} – {formatDate(b.periodEnd)}
-                    </TableCell>
-
-                    <TableCell className="text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <User className="size-3.5 text-muted-foreground" />
-                        <span>{b.responsiblePersonName}</span>
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="text-right font-mono text-sm tabular-nums text-foreground">
+      <div className="flex flex-col gap-3 md:hidden">
+        {isLoading ? (
+          <Card>
+            <CardContent className="flex min-h-48 flex-col items-center justify-center gap-2">
+              <Spinner className="size-6 text-primary" />
+              <p className="text-xs text-muted-foreground">
+                Calculating budget actuals...
+              </p>
+            </CardContent>
+          </Card>
+        ) : report.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <Target className="size-6 text-muted-foreground" />
+              <div>
+                <p className="font-medium text-foreground">No budgets found</p>
+                <p className="text-xs text-muted-foreground">
+                  Create a budget to monitor spending and revenue actuals.
+                </p>
+              </div>
+              <Button size="sm" onClick={() => router.push("/budgets/new")}>
+                <PiggyBank data-icon="inline-start" />
+                Create Budget
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          report.map((b) => {
+            const isOverBudget = b.percentUsed > 100;
+            return (
+              <Card
+                key={b.budgetId}
+                onClick={() => router.push(`/budgets/${b.budgetId}`)}
+                className={`cursor-pointer transition-colors hover:border-primary/50 ${
+                  isOverBudget ? "border-destructive/40" : ""
+                }`}
+              >
+                <CardHeader className="gap-2 pb-3">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <CardTitle className="wrap-break-word text-base">
+                        {b.budgetName}
+                      </CardTitle>
+                      <CardDescription className="mt-1 wrap-break-word">
+                        {b.analyticAccountName}
+                      </CardDescription>
+                    </div>
+                    <Badge
+                      variant={isOverBudget ? "destructive" : "secondary"}
+                      className="shrink-0 font-mono text-xs"
+                    >
+                      {b.percentUsed}%
+                    </Badge>
+                  </div>
+                  {isOverBudget ? (
+                    <p className="flex items-center gap-1 text-xs text-destructive">
+                      <AlertTriangle className="size-3" />
+                      Over budget by {formatCurrency(Math.abs(b.variance))}
+                    </p>
+                  ) : null}
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Period</p>
+                    <p className="mt-1 wrap-break-word">
+                      {formatDate(b.periodStart)} - {formatDate(b.periodEnd)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Responsible</p>
+                    <p className="mt-1 flex min-w-0 items-center gap-1 wrap-break-word">
+                      <User className="size-3.5 shrink-0 text-muted-foreground" />
+                      {b.responsiblePersonName}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Planned</p>
+                    <p className="mt-1 font-mono tabular-nums">
                       {formatCurrency(b.plannedAmount)}
-                    </TableCell>
-
-                    <TableCell className="text-right font-mono text-sm tabular-nums font-medium text-foreground">
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Actual</p>
+                    <p className="mt-1 font-mono tabular-nums">
                       {formatCurrency(b.actualAmount)}
-                    </TableCell>
-
-                    <TableCell
-                      className={`text-right font-mono text-sm tabular-nums font-medium ${
+                    </p>
+                  </div>
+                  <div className="col-span-2 border-t pt-3">
+                    <p className="text-xs text-muted-foreground">Variance</p>
+                    <p
+                      className={`mt-1 font-mono font-medium tabular-nums ${
                         b.variance < 0 ? "text-destructive" : "text-foreground"
                       }`}
                     >
                       {formatCurrency(b.variance)}
-                    </TableCell>
-
-                    <TableCell className="text-right">
-                      {isOverBudget ? (
-                        <Badge
-                          variant="destructive"
-                          className="font-mono text-xs font-semibold px-2 py-0.5"
-                        >
-                          {b.percentUsed}%
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className={
-                            b.percentUsed >= 80
-                              ? "bg-amber-500/10 text-amber-600 border-amber-500/20 font-mono text-xs font-semibold px-2 py-0.5"
-                              : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-mono text-xs font-semibold px-2 py-0.5"
-                          }
-                        >
-                          {b.percentUsed}%
-                        </Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-
-          {report.length > 0 && (
-            <TableFooter className="bg-muted/40 font-semibold border-t">
-              <TableRow className="hover:bg-muted/40">
-                <TableCell colSpan={4} className="text-foreground">
-                  Total Organization Budgets
-                </TableCell>
-                <TableCell className="text-right font-mono tabular-nums text-foreground">
-                  {formatCurrency(totalPlanned)}
-                </TableCell>
-                <TableCell className="text-right font-mono tabular-nums text-foreground">
-                  {formatCurrency(totalActual)}
-                </TableCell>
-                <TableCell
-                  className={`text-right font-mono tabular-nums ${
-                    totalVariance < 0 ? "text-destructive" : "text-foreground"
-                  }`}
-                >
-                  {formatCurrency(totalVariance)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Badge
-                    variant={overallPercent > 100 ? "destructive" : "secondary"}
-                    className="font-mono text-xs font-semibold"
-                  >
-                    {overallPercent}%
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          )}
-        </Table>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
     </div>
   );

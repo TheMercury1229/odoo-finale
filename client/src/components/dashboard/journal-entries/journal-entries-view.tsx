@@ -13,11 +13,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import {
-  fetchJournalEntries,
-  type JournalEntry,
-} from "./journal-entries-api";
+import { fetchJournalEntries, type JournalEntry } from "./journal-entries-api";
 import { useUserPermissions } from "@/lib/use-user-permissions";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,28 +36,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
 
 export function JournalEntriesView() {
   const router = useRouter();
@@ -92,7 +69,12 @@ export function JournalEntriesView() {
         const matchesPartner = entry.partner?.toLowerCase().includes(q);
         const matchesJournal = entry.journalName?.toLowerCase().includes(q);
         const matchesRef = entry.reference?.toLowerCase().includes(q);
-        if (!matchesNumber && !matchesPartner && !matchesJournal && !matchesRef) {
+        if (
+          !matchesNumber &&
+          !matchesPartner &&
+          !matchesJournal &&
+          !matchesRef
+        ) {
           return false;
         }
       }
@@ -191,9 +173,6 @@ export function JournalEntriesView() {
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Review posted accounting journal entries and balanced transaction ledgers.
-          </p>
         </div>
       </div>
 
@@ -322,7 +301,9 @@ export function JournalEntriesView() {
                   >
                     {hasActiveFilters ? (
                       <div className="flex flex-col items-center gap-2">
-                        <span>No journal entries match your search or filters.</span>
+                        <span>
+                          No journal entries match your search or filters.
+                        </span>
                         <Button
                           type="button"
                           variant="outline"
@@ -370,12 +351,7 @@ export function JournalEntriesView() {
                       {formatCurrency(entry.totalAmount)}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge
-                        variant="outline"
-                        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5"
-                      >
-                        {entry.status || "Posted"}
-                      </Badge>
+                      <StatusBadge status={entry.status || "Posted"} />
                     </TableCell>
                   </TableRow>
                 ))

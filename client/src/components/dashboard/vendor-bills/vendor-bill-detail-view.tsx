@@ -118,7 +118,9 @@ export function VendorBillDetailView({ bill }: VendorBillDetailViewProps) {
               variant="outline"
               size="sm"
               nativeButton={false}
-              render={<Link href={`/purchase-orders/${bill.purchaseOrderId}`} />}
+              render={
+                <Link href={`/purchase-orders/${bill.purchaseOrderId}`} />
+              }
               className="bg-muted/40 font-mono text-xs font-semibold"
             >
               <ShoppingCart className="mr-1.5 size-3.5" />
@@ -178,7 +180,7 @@ export function VendorBillDetailView({ bill }: VendorBillDetailViewProps) {
                     href={`/purchase-orders/${bill.purchaseOrderId}`}
                     className="font-medium text-primary underline"
                   >
-                    {bill.poNumber || bill.purchaseOrderId}
+                    {bill.poNumber || "—"}
                   </Link>
                 ) : (
                   "—"
@@ -261,7 +263,7 @@ export function VendorBillDetailView({ bill }: VendorBillDetailViewProps) {
                     Journal Entry
                   </Label>
                   <div className="text-xs font-mono text-muted-foreground mt-0.5">
-                    {bill.journalEntryId}
+                    Posted
                   </div>
                 </div>
               )}
@@ -298,12 +300,15 @@ export function VendorBillDetailView({ bill }: VendorBillDetailViewProps) {
                 </TableHeader>
                 <TableBody>
                   {bill.lines?.map((line, index) => (
-                    <TableRow key={line.id || index} className="hover:bg-muted/20">
+                    <TableRow
+                      key={line.id || index}
+                      className="hover:bg-muted/20"
+                    >
                       <TableCell className="text-center font-mono font-medium text-muted-foreground">
                         {index + 1}
                       </TableCell>
                       <TableCell className="font-medium text-foreground">
-                        {line.productName || line.productId}
+                        {line.productName || "—"}
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center text-xs font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md print:bg-transparent print:p-0 print:text-black">
@@ -340,13 +345,17 @@ export function VendorBillDetailView({ bill }: VendorBillDetailViewProps) {
                           <TableRow className="bg-muted/30">
                             <TableHead className="h-8">Date</TableHead>
                             <TableHead className="h-8">Method</TableHead>
-                            <TableHead className="h-8 text-right">Amount</TableHead>
+                            <TableHead className="h-8 text-right">
+                              Amount
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {payments.map((p) => (
                             <TableRow key={p.id}>
-                              <TableCell className="py-2">{formatDate(p.date)}</TableCell>
+                              <TableCell className="py-2">
+                                {formatDate(p.date)}
+                              </TableCell>
                               <TableCell className="py-2 capitalize font-medium">
                                 {p.method}
                               </TableCell>
@@ -408,11 +417,15 @@ export function VendorBillDetailView({ bill }: VendorBillDetailViewProps) {
           {/* Printable Signature Section */}
           <div className="hidden print:flex justify-between pt-16 mt-8 border-t text-xs text-gray-500">
             <div>
-              <p className="font-semibold text-gray-800">Authorized Signature</p>
+              <p className="font-semibold text-gray-800">
+                Authorized Signature
+              </p>
               <div className="w-48 border-b border-gray-400 mt-10" />
             </div>
             <div className="text-right">
-              <p className="font-semibold text-gray-800">Vendor Acknowledgement</p>
+              <p className="font-semibold text-gray-800">
+                Vendor Acknowledgement
+              </p>
               <div className="w-48 border-b border-gray-400 mt-10" />
             </div>
           </div>

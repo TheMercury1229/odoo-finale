@@ -20,7 +20,10 @@ import {
 
 import { authClient } from "@/lib/auth";
 import { fetchContacts } from "@/components/dashboard/contacts/contacts-api";
-import { fetchProducts, type Product } from "@/components/dashboard/products/products-api";
+import {
+  fetchProducts,
+  type Product,
+} from "@/components/dashboard/products/products-api";
 import { fetchAnalyticAccounts } from "@/components/dashboard/analytic-accounts/analytic-accounts-api";
 import {
   createPurchaseOrder,
@@ -61,6 +64,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 
 const lineSchema = z.object({
   productId: z.string().min(1, "Product selection is required"),
@@ -80,35 +85,13 @@ const purchaseOrderSchema = z.object({
 
 type FormValues = z.infer<typeof purchaseOrderSchema>;
 
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 function getStatusBadge(status: PurchaseOrderStatus) {
-  switch (status) {
-    case "confirmed":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white capitalize px-3 py-1 font-medium">
-          Confirmed
-        </Badge>
-      );
-    case "cancelled":
-      return (
-        <Badge variant="destructive" className="capitalize px-3 py-1 font-medium">
-          Cancelled
-        </Badge>
-      );
-    case "draft":
-    default:
-      return (
-        <Badge variant="secondary" className="capitalize px-3 py-1 font-medium">
-          Draft
-        </Badge>
-      );
-  }
+  const labels: Record<PurchaseOrderStatus, string> = {
+    confirmed: "Confirmed",
+    cancelled: "Cancelled",
+    draft: "Draft",
+  };
+  return <StatusBadge status={labels[status] || "Draft"} />;
 }
 
 interface PurchaseOrderFormProps {
@@ -142,7 +125,9 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
         unitPrice: Number(l.unitPrice),
       }));
     }
-    return [{ productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 }];
+    return [
+      { productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 },
+    ];
   }, [initialPo]);
 
   const {
@@ -174,13 +159,17 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
     queryFn: () => fetchContacts({ includeArchived: false, view: "list" }),
   });
   const contacts =
-    contactsResult && "contacts" in contactsResult ? contactsResult.contacts : [];
+    contactsResult && "contacts" in contactsResult
+      ? contactsResult.contacts
+      : [];
 
   const vendors = useMemo(() => {
     return contacts.filter(
       (c) =>
         !c.isArchived &&
-        (c.type === "vendor" || c.type === "both" || c.id === initialPo?.vendorId),
+        (c.type === "vendor" ||
+          c.type === "both" ||
+          c.id === initialPo?.vendorId),
     );
   }, [contacts, initialPo?.vendorId]);
 
@@ -190,7 +179,9 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
     queryFn: () => fetchProducts({ includeArchived: false, view: "list" }),
   });
   const products =
-    productsResult && "products" in productsResult ? productsResult.products : [];
+    productsResult && "products" in productsResult
+      ? productsResult.products
+      : [];
 
   const unarchivedProducts = useMemo(() => {
     return products.filter((p) => !p.isArchived);
@@ -254,7 +245,9 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
       reset({
         vendorId: "",
         orderDate: today,
-        lines: [{ productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 }],
+        lines: [
+          { productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 },
+        ],
       });
       setApiError(null);
     }
@@ -501,12 +494,18 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
 
             {/* Vendor Name */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="vendorId" className="font-semibold text-foreground">
-                Vendor Name {!isReadOnly && <span className="text-destructive">*</span>}
+              <Label
+                htmlFor="vendorId"
+                className="font-semibold text-foreground"
+              >
+                Vendor Name{" "}
+                {!isReadOnly && <span className="text-destructive">*</span>}
               </Label>
               {isReadOnly ? (
                 <Input
-                  value={initialPo?.vendorName || initialPo?.vendor?.name || "—"}
+                  value={
+                    initialPo?.vendorName || initialPo?.vendor?.name || "—"
+                  }
                   disabled
                   className="bg-muted/50 font-medium"
                 />
@@ -526,7 +525,13 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                               ? "Loading vendors..."
                               : "Select a vendor"
                           }
-                        />
+                        >
+                          {
+                            contacts.find(
+                              (contact) => contact.id === field.value,
+                            )?.name
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {vendors.length === 0 ? (
@@ -554,8 +559,12 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
 
             {/* PO Date */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="orderDate" className="font-semibold text-foreground">
-                PO Date {!isReadOnly && <span className="text-destructive">*</span>}
+              <Label
+                htmlFor="orderDate"
+                className="font-semibold text-foreground"
+              >
+                PO Date{" "}
+                {!isReadOnly && <span className="text-destructive">*</span>}
               </Label>
               {isReadOnly ? (
                 <Input
@@ -591,7 +600,12 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    append({ productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 })
+                    append({
+                      productId: "",
+                      analyticAccountId: null,
+                      quantity: 1,
+                      unitPrice: 0,
+                    })
                   }
                   className="h-8 text-xs font-medium"
                 >
@@ -615,16 +629,25 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                       Sr. No.
                     </TableHead>
                     <TableHead className="min-w-56 font-semibold">
-                      Product {!isReadOnly && <span className="text-destructive">*</span>}
+                      Product{" "}
+                      {!isReadOnly && (
+                        <span className="text-destructive">*</span>
+                      )}
                     </TableHead>
                     <TableHead className="min-w-44 font-semibold">
                       Analytic Account
                     </TableHead>
                     <TableHead className="w-28 font-semibold">
-                      Qty {!isReadOnly && <span className="text-destructive">*</span>}
+                      Qty{" "}
+                      {!isReadOnly && (
+                        <span className="text-destructive">*</span>
+                      )}
                     </TableHead>
                     <TableHead className="w-40 font-semibold">
-                      Unit Price (Rs.) {!isReadOnly && <span className="text-destructive">*</span>}
+                      Unit Price (Rs.){" "}
+                      {!isReadOnly && (
+                        <span className="text-destructive">*</span>
+                      )}
                     </TableHead>
                     <TableHead className="w-40 text-right font-semibold">
                       Total
@@ -641,7 +664,10 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                     const lineProduct = productMap.get(currentLine?.productId);
 
                     return (
-                      <TableRow key={fieldItem.id} className="hover:bg-muted/20">
+                      <TableRow
+                        key={fieldItem.id}
+                        className="hover:bg-muted/20"
+                      >
                         {/* Sr. No. */}
                         <TableCell className="text-center font-mono font-medium text-muted-foreground">
                           {index + 1}
@@ -674,7 +700,14 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                                             ? "Loading products..."
                                             : "Select product"
                                         }
-                                      />
+                                      >
+                                        {
+                                          unarchivedProducts.find(
+                                            (product) =>
+                                              product.id === field.value,
+                                          )?.name
+                                        }
+                                      </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                       {unarchivedProducts.length === 0 ? (
@@ -686,7 +719,11 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                                           <SelectItem key={p.id} value={p.id}>
                                             {p.name}{" "}
                                             <span className="text-xs text-muted-foreground">
-                                              ({formatCurrency(Number(p.costPrice || 0))})
+                                              (
+                                              {formatCurrency(
+                                                Number(p.costPrice || 0),
+                                              )}
+                                              )
                                             </span>
                                           </SelectItem>
                                         ))
@@ -708,7 +745,8 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                         <TableCell>
                           {isReadOnly ? (
                             <span className="text-sm font-medium text-muted-foreground">
-                              {initialPo?.lines?.[index]?.analyticAccountName || "—"}
+                              {initialPo?.lines?.[index]?.analyticAccountName ||
+                                "—"}
                             </span>
                           ) : (
                             <Controller
@@ -722,7 +760,14 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                                   }
                                 >
                                   <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="None" />
+                                    <SelectValue placeholder="None">
+                                      {
+                                        expenseAnalytics.find(
+                                          (account) =>
+                                            account.id === field.value,
+                                        )?.name
+                                      }
+                                    </SelectValue>
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="none">None</SelectItem>
@@ -757,14 +802,18 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                                     placeholder="1"
                                     className="font-mono text-right"
                                     value={
-                                      field.value === undefined || field.value === null
+                                      field.value === undefined ||
+                                      field.value === null
                                         ? ""
                                         : field.value
                                     }
                                     onChange={(e) => {
                                       const raw = e.target.value;
-                                      const val = raw === "" ? 0 : parseFloat(raw);
-                                      field.onChange(Number.isNaN(val) ? 0 : val);
+                                      const val =
+                                        raw === "" ? 0 : parseFloat(raw);
+                                      field.onChange(
+                                        Number.isNaN(val) ? 0 : val,
+                                      );
                                     }}
                                   />
                                 )}
@@ -797,14 +846,18 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                                     placeholder="0.00"
                                     className="font-mono text-right"
                                     value={
-                                      field.value === undefined || field.value === null
+                                      field.value === undefined ||
+                                      field.value === null
                                         ? ""
                                         : field.value
                                     }
                                     onChange={(e) => {
                                       const raw = e.target.value;
-                                      const val = raw === "" ? 0 : parseFloat(raw);
-                                      field.onChange(Number.isNaN(val) ? 0 : val);
+                                      const val =
+                                        raw === "" ? 0 : parseFloat(raw);
+                                      field.onChange(
+                                        Number.isNaN(val) ? 0 : val,
+                                      );
                                     }}
                                   />
                                 )}
@@ -869,12 +922,15 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
               Confirm Purchase Order
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to confirm this purchase order? Once confirmed,
-              order quantities and prices are locked to prevent accidental modifications.
+              Are you sure you want to confirm this purchase order? Once
+              confirmed, order quantities and prices are locked to prevent
+              accidental modifications.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Review Order</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Review Order
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={executeConfirm}
               disabled={isSubmitting}
@@ -895,12 +951,14 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
               Cancel Purchase Order
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel this purchase order? This action cannot
-              be undone.
+              Are you sure you want to cancel this purchase order? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Keep Order</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Keep Order
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={executeCancel}
               disabled={isSubmitting}

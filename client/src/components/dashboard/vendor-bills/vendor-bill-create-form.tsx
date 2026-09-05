@@ -95,8 +95,8 @@ export function VendorBillCreateForm() {
               No Purchase Order Specified
             </h2>
             <p className="text-sm text-muted-foreground max-w-md">
-              Vendor bills must be created from a confirmed purchase order. Please
-              select a confirmed purchase order to create its bill.
+              Vendor bills must be created from a confirmed purchase order.
+              Please select a confirmed purchase order to create its bill.
             </p>
             <Button
               nativeButton={false}
@@ -134,7 +134,8 @@ export function VendorBillCreateForm() {
               Purchase Order Not Found
             </h2>
             <p className="text-sm text-muted-foreground max-w-md">
-              The purchase order could not be located or you may not have permission to view it.
+              The purchase order could not be located or you may not have
+              permission to view it.
             </p>
             <Button
               nativeButton={false}
@@ -162,8 +163,16 @@ export function VendorBillCreateForm() {
               Purchase Order Not Confirmed
             </h2>
             <p className="text-sm text-muted-foreground max-w-md">
-              Purchase Order <span className="font-semibold text-foreground">{po.poNumber}</span> is currently in{" "}
-              <span className="capitalize font-semibold text-foreground">{po.status}</span> status. Purchase orders must be confirmed before creating a vendor bill.
+              Purchase Order{" "}
+              <span className="font-semibold text-foreground">
+                {po.poNumber}
+              </span>{" "}
+              is currently in{" "}
+              <span className="capitalize font-semibold text-foreground">
+                {po.status}
+              </span>{" "}
+              status. Purchase orders must be confirmed before creating a vendor
+              bill.
             </p>
             <div className="flex gap-3 mt-2">
               <Button
@@ -200,7 +209,10 @@ export function VendorBillCreateForm() {
             </h2>
             <p className="text-sm text-muted-foreground max-w-md">
               A vendor bill has already been created for Purchase Order{" "}
-              <span className="font-semibold text-foreground">{po.poNumber}</span>. Only one bill can be created per purchase order.
+              <span className="font-semibold text-foreground">
+                {po.poNumber}
+              </span>
+              . Only one bill can be created per purchase order.
             </p>
             <div className="flex gap-3 mt-2">
               {po.billId && (
@@ -234,9 +246,14 @@ export function VendorBillCreateForm() {
 
       const created = await createVendorBill({
         purchaseOrderId: po.id,
-        vendorReference: values.vendorReference ? values.vendorReference.trim() : null,
+        vendorReference: values.vendorReference
+          ? values.vendorReference.trim()
+          : null,
         invoiceDate: values.invoiceDate,
-        dueDate: values.dueDate && values.dueDate.trim() ? values.dueDate.trim() : null,
+        dueDate:
+          values.dueDate && values.dueDate.trim()
+            ? values.dueDate.trim()
+            : null,
       });
 
       router.push(`/vendor-bills/${created.id}`);
@@ -345,7 +362,8 @@ export function VendorBillCreateForm() {
                   className="bg-muted/50 font-mono text-muted-foreground text-sm font-medium"
                 />
                 <span className="text-[11px] text-muted-foreground">
-                  Sequential internal number generated on confirm (e.g. Bill/2026/0001)
+                  Sequential internal number generated on confirm (e.g.
+                  Bill/2026/0001)
                 </span>
               </div>
 
@@ -367,7 +385,10 @@ export function VendorBillCreateForm() {
             {/* Right Column: Bill Reference, Bill Date, Due Date */}
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="vendorReference" className="font-semibold text-foreground">
+                <Label
+                  htmlFor="vendorReference"
+                  className="font-semibold text-foreground"
+                >
                   Bill Reference (Optional)
                 </Label>
                 <Input
@@ -382,7 +403,10 @@ export function VendorBillCreateForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="invoiceDate" className="font-semibold text-foreground">
+                  <Label
+                    htmlFor="invoiceDate"
+                    className="font-semibold text-foreground"
+                  >
                     Bill Date <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -398,14 +422,13 @@ export function VendorBillCreateForm() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="dueDate" className="font-semibold text-foreground">
+                  <Label
+                    htmlFor="dueDate"
+                    className="font-semibold text-foreground"
+                  >
                     Due Date
                   </Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    {...register("dueDate")}
-                  />
+                  <Input id="dueDate" type="date" {...register("dueDate")} />
                 </div>
               </div>
             </div>
@@ -451,12 +474,15 @@ export function VendorBillCreateForm() {
                     const subtotal = Math.round(qty * price * 100) / 100;
 
                     return (
-                      <TableRow key={line.id || index} className="hover:bg-muted/20">
+                      <TableRow
+                        key={line.id || index}
+                        className="hover:bg-muted/20"
+                      >
                         <TableCell className="text-center font-mono font-medium text-muted-foreground">
                           {index + 1}
                         </TableCell>
                         <TableCell className="font-medium text-foreground">
-                          {line.productName || line.productId}
+                          {line.productName || "—"}
                         </TableCell>
                         <TableCell>
                           <span className="inline-flex items-center text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-md">

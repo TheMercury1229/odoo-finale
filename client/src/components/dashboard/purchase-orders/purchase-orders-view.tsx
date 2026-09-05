@@ -6,6 +6,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Search, ShoppingCart } from "lucide-react";
 
 import { authClient } from "@/lib/auth";
+import { DataTable } from "@/components/primitives/DataTable";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { usePurchaseOrders } from "./purchase-orders-hooks";
 import type { PurchaseOrderStatus } from "./purchase-orders-api";
 import { Badge } from "@/components/ui/badge";
@@ -22,50 +25,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function formatDate(dateStr: string) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 function getStatusBadge(status: PurchaseOrderStatus) {
-  switch (status) {
-    case "confirmed":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white capitalize">
-          Confirmed
-        </Badge>
-      );
-    case "cancelled":
-      return (
-        <Badge variant="destructive" className="capitalize">
-          Cancelled
-        </Badge>
-      );
-    case "draft":
-    default:
-      return (
-        <Badge variant="secondary" className="capitalize font-medium">
-          Draft
-        </Badge>
-      );
-  }
+  const labels: Record<PurchaseOrderStatus, string> = {
+    confirmed: "Confirmed",
+    cancelled: "Cancelled",
+    draft: "Draft",
+  };
+  return <StatusBadge status={labels[status] || "Draft"} />;
 }
 
 export function PurchaseOrdersView() {
@@ -83,7 +49,11 @@ export function PurchaseOrdersView() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data: purchaseOrders = [], isLoading, isError } = usePurchaseOrders({
+  const {
+    data: purchaseOrders = [],
+    isLoading,
+    isError,
+  } = usePurchaseOrders({
     search,
     status: statusFilter,
   });
@@ -100,7 +70,10 @@ export function PurchaseOrdersView() {
       {/* ─── Top Action Bar ─── */}
       <div className="flex flex-wrap items-center gap-3">
         {canCreate && (
-          <Button nativeButton={false} render={<Link href="/purchase-orders/new" />}>
+          <Button
+            nativeButton={false}
+            render={<Link href="/purchase-orders/new" />}
+          >
             <Plus data-icon="inline-start" className="size-4" />
             New
           </Button>
@@ -136,7 +109,9 @@ export function PurchaseOrdersView() {
       {/* ─── Heading Row ─── */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Purchase Orders</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Purchase Orders
+          </h1>
           {!isLoading && purchaseOrders.length > 0 ? (
             <Badge variant="secondary">{purchaseOrders.length}</Badge>
           ) : null}
@@ -179,7 +154,7 @@ export function PurchaseOrdersView() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="overflow-hidden border border-border/80">
+        <DataTable className="border-border/80">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -187,7 +162,9 @@ export function PurchaseOrdersView() {
                 <TableHead className="font-semibold">Vendor Name</TableHead>
                 <TableHead className="w-36 font-semibold">PO Date</TableHead>
                 <TableHead className="w-32 font-semibold">Status</TableHead>
-                <TableHead className="w-40 text-right font-semibold">Total</TableHead>
+                <TableHead className="w-40 text-right font-semibold">
+                  Total
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -227,7 +204,7 @@ export function PurchaseOrdersView() {
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </DataTable>
       )}
     </div>
   );

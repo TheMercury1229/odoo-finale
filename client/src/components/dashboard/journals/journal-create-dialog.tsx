@@ -23,7 +23,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -133,8 +138,8 @@ export function JournalCreateDialog({
         <DialogHeader>
           <DialogTitle>New Journal</DialogTitle>
           <DialogDescription>
-            Create a journal for recording transactions. Each type can only exist
-            once per organization.
+            Create a journal for recording transactions. Each type can only
+            exist once per organization.
           </DialogDescription>
         </DialogHeader>
 
@@ -212,7 +217,12 @@ export function JournalCreateDialog({
                       id="journal-default-account"
                       className="w-full"
                     >
-                      <SelectValue placeholder="Select an account (optional)" />
+                      <SelectValue placeholder="Select an account (optional)">
+                        {
+                          accounts.find((account) => account.id === field.value)
+                            ?.name
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-64">
                       <SelectItem value="none">

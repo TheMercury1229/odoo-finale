@@ -8,6 +8,7 @@ import { useState } from "react";
 import { usePortalInvoices } from "@/components/portal/portal-hooks";
 import { getPortalStatusBadge } from "@/app/(portal)/portal/bills/page";
 import { triggerPrint } from "@/lib/print";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,28 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
 
 export default function PortalInvoicesPage() {
   const router = useRouter();
@@ -108,7 +87,9 @@ export default function PortalInvoicesPage() {
                 <TableHead className="font-semibold">Invoice Date</TableHead>
                 <TableHead className="font-semibold">Due Date</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold text-right">Total</TableHead>
+                <TableHead className="font-semibold text-right">
+                  Total
+                </TableHead>
                 <TableHead className="font-semibold text-right">
                   Amount Due
                 </TableHead>

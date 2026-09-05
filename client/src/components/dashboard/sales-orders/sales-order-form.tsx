@@ -69,7 +69,10 @@ const lineSchema = z.object({
   analyticAccountId: z.string().optional().nullable(),
   quantity: z.coerce.number().min(0.01, "Quantity must be greater than 0"),
   unitPrice: z.coerce.number().min(0, "Unit price cannot be negative"),
-  taxAmount: z.coerce.number().min(0, "Tax amount cannot be negative").default(0),
+  taxAmount: z.coerce
+    .number()
+    .min(0, "Tax amount cannot be negative")
+    .default(0),
 });
 
 const salesOrderSchema = z.object({
@@ -125,7 +128,15 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
         taxAmount: Number(l.taxAmount || 0),
       }));
     }
-    return [{ productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0, taxAmount: 0 }];
+    return [
+      {
+        productId: "",
+        analyticAccountId: null,
+        quantity: 1,
+        unitPrice: 0,
+        taxAmount: 0,
+      },
+    ];
   }, [initialSo]);
 
   const {
@@ -155,7 +166,9 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
     queryFn: () => fetchContacts({ includeArchived: false, view: "list" }),
   });
   const contacts =
-    contactsResult && "contacts" in contactsResult ? contactsResult.contacts : [];
+    contactsResult && "contacts" in contactsResult
+      ? contactsResult.contacts
+      : [];
 
   const customers = useMemo(() => {
     return contacts.filter(
@@ -183,7 +196,9 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
     queryFn: () => fetchProducts({ includeArchived: false, view: "list" }),
   });
   const products =
-    productsResult && "products" in productsResult ? productsResult.products : [];
+    productsResult && "products" in productsResult
+      ? productsResult.products
+      : [];
 
   const unarchivedProducts = useMemo(() => {
     return products.filter((p) => !p.isArchived);
@@ -243,7 +258,8 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
       if (currentMode === "%") {
         const rate = taxRates[index] ?? 0;
         const currentQty = Number(watchedLines[index]?.quantity) || 1;
-        const computedTax = Math.round(currentQty * price * (rate / 100) * 100) / 100;
+        const computedTax =
+          Math.round(currentQty * price * (rate / 100) * 100) / 100;
         setValue(`lines.${index}.taxAmount`, computedTax, {
           shouldValidate: true,
           shouldDirty: true,
@@ -270,7 +286,9 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
       const currentQty =
         field === "quantity" ? val : Number(watchedLines[index]?.quantity) || 0;
       const currentPrice =
-        field === "unitPrice" ? val : Number(watchedLines[index]?.unitPrice) || 0;
+        field === "unitPrice"
+          ? val
+          : Number(watchedLines[index]?.unitPrice) || 0;
       const computedTax =
         Math.round(currentQty * currentPrice * (rate / 100) * 100) / 100;
       setValue(`lines.${index}.taxAmount`, computedTax, {
@@ -481,17 +499,20 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
           )}
 
           {/* Cancel Button */}
-          {status !== "cancelled" && isExisting && canCreate && !initialSo?.hasInvoice && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => setCancelDialogOpen(true)}
-              disabled={isSubmitting}
-            >
-              <X className="mr-1.5 size-4" />
-              Cancel Order
-            </Button>
-          )}
+          {status !== "cancelled" &&
+            isExisting &&
+            canCreate &&
+            !initialSo?.hasInvoice && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setCancelDialogOpen(true)}
+                disabled={isSubmitting}
+              >
+                <X className="mr-1.5 size-4" />
+                Cancel Order
+              </Button>
+            )}
         </div>
 
         {/* Right Navigation / Back */}
@@ -554,17 +575,27 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
         </CardHeader>
 
         <CardContent className="p-6 flex flex-col gap-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
+          >
             {/* Header Information: Customer & Order Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Customer Select */}
               <div className="flex flex-col gap-2">
-                <Label htmlFor="customerId" className="font-semibold text-foreground">
+                <Label
+                  htmlFor="customerId"
+                  className="font-semibold text-foreground"
+                >
                   Customer <span className="text-destructive">*</span>
                 </Label>
                 {isReadOnly ? (
                   <Input
-                    value={initialSo?.customerName || initialSo?.customer?.name || "—"}
+                    value={
+                      initialSo?.customerName ||
+                      initialSo?.customer?.name ||
+                      "—"
+                    }
                     disabled
                     className="bg-muted/50 font-medium"
                   />
@@ -579,7 +610,13 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                         disabled={isLoadingContacts}
                       >
                         <SelectTrigger id="customerId" className="w-full">
-                          <SelectValue placeholder="Select a customer" />
+                          <SelectValue placeholder="Select a customer">
+                            {
+                              customers.find(
+                                (customer) => customer.id === field.value,
+                              )?.name
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {customers.map((c) => (
@@ -601,7 +638,10 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
 
               {/* Order Date */}
               <div className="flex flex-col gap-2">
-                <Label htmlFor="orderDate" className="font-semibold text-foreground">
+                <Label
+                  htmlFor="orderDate"
+                  className="font-semibold text-foreground"
+                >
                   Order Date <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -652,13 +692,19 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
                       <TableHead className="w-12 text-center">#</TableHead>
                       <TableHead className="min-w-52 font-semibold">
-                        Product {!isReadOnly && <span className="text-destructive">*</span>}
+                        Product{" "}
+                        {!isReadOnly && (
+                          <span className="text-destructive">*</span>
+                        )}
                       </TableHead>
                       <TableHead className="min-w-44 font-semibold">
                         Analytic Account
                       </TableHead>
                       <TableHead className="w-24 text-right font-semibold">
-                        Qty {!isReadOnly && <span className="text-destructive">*</span>}
+                        Qty{" "}
+                        {!isReadOnly && (
+                          <span className="text-destructive">*</span>
+                        )}
                       </TableHead>
                       <TableHead className="w-32 text-right font-semibold">
                         Unit Price
@@ -669,7 +715,9 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                       <TableHead className="w-36 text-right font-semibold">
                         Total
                       </TableHead>
-                      {!isReadOnly && <TableHead className="w-12 text-center" />}
+                      {!isReadOnly && (
+                        <TableHead className="w-12 text-center" />
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -679,7 +727,8 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                       const price = Number(currentLine.unitPrice) || 0;
                       const tax = Number(currentLine.taxAmount) || 0;
                       const lineSubtotal = Math.round(qty * price * 100) / 100;
-                      const lineTotal = Math.round((lineSubtotal + tax) * 100) / 100;
+                      const lineTotal =
+                        Math.round((lineSubtotal + tax) * 100) / 100;
                       const currentMode = taxModes[index] ?? "%";
 
                       return (
@@ -693,8 +742,8 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                             {isReadOnly ? (
                               <div className="font-medium text-foreground py-2">
                                 {currentLine.productId
-                                  ? productMap.get(currentLine.productId)?.name ||
-                                    currentLine.productId
+                                  ? productMap.get(currentLine.productId)
+                                      ?.name || "—"
                                   : "—"}
                               </div>
                             ) : (
@@ -709,7 +758,14 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                                     }}
                                   >
                                     <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="Select product" />
+                                      <SelectValue placeholder="Select product">
+                                        {
+                                          unarchivedProducts.find(
+                                            (product) =>
+                                              product.id === productField.value,
+                                          )?.name
+                                        }
+                                      </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                       {unarchivedProducts.map((p) => (
@@ -733,7 +789,8 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                           <TableCell className="pt-2">
                             {isReadOnly ? (
                               <div className="text-sm font-medium text-muted-foreground py-2">
-                                {initialSo?.lines?.[index]?.analyticAccountName || "—"}
+                                {initialSo?.lines?.[index]
+                                  ?.analyticAccountName || "—"}
                               </div>
                             ) : (
                               <Controller
@@ -743,11 +800,20 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                                   <Select
                                     value={field.value || "none"}
                                     onValueChange={(val) =>
-                                      field.onChange(val === "none" ? null : val)
+                                      field.onChange(
+                                        val === "none" ? null : val,
+                                      )
                                     }
                                   >
                                     <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="None" />
+                                      <SelectValue placeholder="None">
+                                        {
+                                          incomeAnalytics.find(
+                                            (account) =>
+                                              account.id === field.value,
+                                          )?.name
+                                        }
+                                      </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="none">None</SelectItem>
@@ -847,7 +913,9 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                                     type="button"
                                     onClick={() => toggleTaxMode(index)}
                                     title={`Current mode: ${currentMode}. Click to switch to ${
-                                      currentMode === "%" ? "₹ (Amount)" : "% (Rate)"
+                                      currentMode === "%"
+                                        ? "₹ (Amount)"
+                                        : "% (Rate)"
                                     }`}
                                     className="px-2 py-1 text-xs font-bold rounded border bg-muted hover:bg-muted/80 text-foreground transition-colors shrink-0"
                                   >

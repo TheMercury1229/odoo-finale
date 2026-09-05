@@ -93,8 +93,8 @@ export function CustomerInvoiceCreateForm() {
               No Sales Order Specified
             </h2>
             <p className="text-sm text-muted-foreground max-w-md">
-              Customer invoices must be created from a confirmed sales order. Please
-              select a confirmed sales order to generate an invoice.
+              Customer invoices must be created from a confirmed sales order.
+              Please select a confirmed sales order to generate an invoice.
             </p>
             <Button
               nativeButton={false}
@@ -158,9 +158,10 @@ export function CustomerInvoiceCreateForm() {
               Sales Order Not Confirmed
             </h2>
             <p className="text-sm text-muted-foreground max-w-md">
-              Sales Order <span className="font-mono font-bold">{so.soNumber}</span> is
-              currently in &quot;{so.status}&quot; status. An invoice can only be created
-              once the sales order is confirmed.
+              Sales Order{" "}
+              <span className="font-mono font-bold">{so.soNumber}</span> is
+              currently in &quot;{so.status}&quot; status. An invoice can only
+              be created once the sales order is confirmed.
             </p>
             <Button
               nativeButton={false}
@@ -188,8 +189,10 @@ export function CustomerInvoiceCreateForm() {
               Invoice Already Generated
             </h2>
             <p className="text-sm text-muted-foreground max-w-md">
-              Sales Order <span className="font-mono font-bold">{so.soNumber}</span> already
-              has a customer invoice. Each sales order can only have one invoice.
+              Sales Order{" "}
+              <span className="font-mono font-bold">{so.soNumber}</span> already
+              has a customer invoice. Each sales order can only have one
+              invoice.
             </p>
             <div className="flex gap-3">
               {so.invoiceId && (
@@ -341,7 +344,10 @@ export function CustomerInvoiceCreateForm() {
         </CardHeader>
 
         <CardContent className="p-6 flex flex-col gap-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
+          >
             {/* Header Fields: Customer, Linked SO, Invoice Date, Due Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
               {/* Left Column */}
@@ -375,7 +381,9 @@ export function CustomerInvoiceCreateForm() {
                       variant="outline"
                       size="sm"
                       nativeButton={false}
-                      render={<Link href={`/sales-orders/${so.id}`} target="_blank" />}
+                      render={
+                        <Link href={`/sales-orders/${so.id}`} target="_blank" />
+                      }
                       className="shrink-0"
                     >
                       <ShoppingBag className="mr-1 size-3.5" />
@@ -394,7 +402,11 @@ export function CustomerInvoiceCreateForm() {
                   >
                     Invoice Date <span className="text-destructive">*</span>
                   </Label>
-                  <Input id="invoiceDate" type="date" {...register("invoiceDate")} />
+                  <Input
+                    id="invoiceDate"
+                    type="date"
+                    {...register("invoiceDate")}
+                  />
                   {errors.invoiceDate && (
                     <p className="text-xs text-destructive font-medium">
                       {errors.invoiceDate.message}
@@ -459,15 +471,19 @@ export function CustomerInvoiceCreateForm() {
                       const price = Number(line.unitPrice);
                       const tax = Number(line.taxAmount || 0);
                       const lineSubtotal = Math.round(qty * price * 100) / 100;
-                      const lineTotal = Math.round((lineSubtotal + tax) * 100) / 100;
+                      const lineTotal =
+                        Math.round((lineSubtotal + tax) * 100) / 100;
 
                       return (
-                        <TableRow key={line.id || index} className="hover:bg-muted/20">
+                        <TableRow
+                          key={line.id || index}
+                          className="hover:bg-muted/20"
+                        >
                           <TableCell className="text-center font-mono font-medium text-muted-foreground">
                             {index + 1}
                           </TableCell>
                           <TableCell className="font-medium text-foreground">
-                            {line.productName || line.productId}
+                            {line.productName || "—"}
                           </TableCell>
                           <TableCell>
                             <span className="inline-flex items-center text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-md border border-emerald-500/20">

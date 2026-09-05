@@ -94,10 +94,7 @@ const budgetFormSchema = z
       .string()
       .trim()
       .min(1, "Responsible contact is required"),
-    analyticAccountId: z
-      .string()
-      .trim()
-      .min(1, "Analytic account is required"),
+    analyticAccountId: z.string().trim().min(1, "Analytic account is required"),
     committedAmount: z
       .number({ message: "Committed amount is required" })
       .positive("Committed amount must be greater than 0"),
@@ -229,7 +226,8 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
     },
     onError: (err: unknown) => {
       let msg = "Failed to confirm budget.";
-      if (axios.isAxiosError(err)) msg = err.response?.data?.error || err.message;
+      if (axios.isAxiosError(err))
+        msg = err.response?.data?.error || err.message;
       toast.add({ type: "error", title: msg });
     },
   });
@@ -250,7 +248,8 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
     },
     onError: (err: unknown) => {
       let msg = "Failed to cancel budget.";
-      if (axios.isAxiosError(err)) msg = err.response?.data?.error || err.message;
+      if (axios.isAxiosError(err))
+        msg = err.response?.data?.error || err.message;
       toast.add({ type: "error", title: msg });
     },
   });
@@ -273,7 +272,8 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
     },
     onError: (err: unknown) => {
       let msg = "Failed to revise budget.";
-      if (axios.isAxiosError(err)) msg = err.response?.data?.error || err.message;
+      if (axios.isAxiosError(err))
+        msg = err.response?.data?.error || err.message;
       toast.add({ type: "error", title: msg });
     },
   });
@@ -358,7 +358,9 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
               variant="outline"
               size="sm"
               onClick={() => {
-                if (window.confirm("Are you sure you want to cancel this budget?")) {
+                if (
+                  window.confirm("Are you sure you want to cancel this budget?")
+                ) {
                   cancelMutation.mutate();
                 }
               }}
@@ -436,7 +438,10 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
               <div className="space-y-5">
                 {/* Budget Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="font-semibold text-foreground">
+                  <Label
+                    htmlFor="name"
+                    className="font-semibold text-foreground"
+                  >
                     Budget Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -447,7 +452,9 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                     className={errors.name ? "border-destructive" : ""}
                   />
                   {errors.name && (
-                    <p className="text-xs text-destructive">{errors.name.message}</p>
+                    <p className="text-xs text-destructive">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
@@ -465,7 +472,9 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                         type="date"
                         disabled={!isDraft}
                         {...register("periodStart")}
-                        className={errors.periodStart ? "border-destructive" : ""}
+                        className={
+                          errors.periodStart ? "border-destructive" : ""
+                        }
                       />
                     </div>
                     <div>
@@ -494,10 +503,14 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                 {initialData?.revisionOf && (
                   <div className="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50/60 p-3 text-sm dark:border-purple-900/50 dark:bg-purple-950/20">
                     <History className="size-4 text-purple-600" />
-                    <span className="font-medium text-foreground">Revision Of:</span>
+                    <span className="font-medium text-foreground">
+                      Revision Of:
+                    </span>
                     <button
                       type="button"
-                      onClick={() => router.push(`/budgets/${initialData.revisionOf!.id}`)}
+                      onClick={() =>
+                        router.push(`/budgets/${initialData.revisionOf!.id}`)
+                      }
                       className="font-semibold text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1"
                     >
                       {initialData.revisionOf.name}
@@ -510,10 +523,14 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                 {initialData?.revisions && initialData.revisions.length > 0 && (
                   <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-sm dark:border-blue-900/50 dark:bg-blue-950/20">
                     <RefreshCw className="size-4 text-blue-600" />
-                    <span className="font-medium text-foreground">Revised With:</span>
+                    <span className="font-medium text-foreground">
+                      Revised With:
+                    </span>
                     <button
                       type="button"
-                      onClick={() => router.push(`/budgets/${initialData.revisions![0].id}`)}
+                      onClick={() =>
+                        router.push(`/budgets/${initialData.revisions![0].id}`)
+                      }
                       className="font-semibold text-blue-700 dark:text-blue-300 hover:underline flex items-center gap-1"
                     >
                       {initialData.revisions[0].name}
@@ -524,8 +541,12 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
 
                 {/* Responsible (select from Contacts created on click) */}
                 <div className="space-y-2">
-                  <Label htmlFor="responsibleContactId" className="font-semibold text-foreground">
-                    Responsible Contact <span className="text-destructive">*</span>
+                  <Label
+                    htmlFor="responsibleContactId"
+                    className="font-semibold text-foreground"
+                  >
+                    Responsible Contact{" "}
+                    <span className="text-destructive">*</span>
                   </Label>
                   <Controller
                     control={control}
@@ -538,7 +559,11 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                       >
                         <SelectTrigger
                           id="responsibleContactId"
-                          className={errors.responsibleContactId ? "border-destructive" : ""}
+                          className={
+                            errors.responsibleContactId
+                              ? "border-destructive"
+                              : ""
+                          }
                         >
                           <SelectValue
                             placeholder={
@@ -546,7 +571,13 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                                 ? "Loading contacts..."
                                 : "Select responsible contact"
                             }
-                          />
+                          >
+                            {
+                              contacts.find(
+                                (contact) => contact.id === field.value,
+                              )?.name
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {contacts.map((c) => (
@@ -567,7 +598,10 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
 
                 {/* Analytic Account */}
                 <div className="space-y-2">
-                  <Label htmlFor="analyticAccountId" className="font-semibold text-foreground">
+                  <Label
+                    htmlFor="analyticAccountId"
+                    className="font-semibold text-foreground"
+                  >
                     Analytic Account <span className="text-destructive">*</span>
                   </Label>
                   <Controller
@@ -581,7 +615,9 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                       >
                         <SelectTrigger
                           id="analyticAccountId"
-                          className={errors.analyticAccountId ? "border-destructive" : ""}
+                          className={
+                            errors.analyticAccountId ? "border-destructive" : ""
+                          }
                         >
                           <SelectValue
                             placeholder={
@@ -589,12 +625,19 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                                 ? "Loading analytic accounts..."
                                 : "Select analytic account"
                             }
-                          />
+                          >
+                            {
+                              analyticAccounts.find(
+                                (account) => account.id === field.value,
+                              )?.name
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {analyticAccounts.map((a) => (
                             <SelectItem key={a.id} value={a.id}>
-                              {a.name} ({a.type === "income" ? "Income" : "Expense"})
+                              {a.name} (
+                              {a.type === "income" ? "Income" : "Expense"})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -610,7 +653,10 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
 
                 {/* Committed Amount */}
                 <div className="space-y-2">
-                  <Label htmlFor="committedAmount" className="font-semibold text-foreground">
+                  <Label
+                    htmlFor="committedAmount"
+                    className="font-semibold text-foreground"
+                  >
                     Committed Amount <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -620,7 +666,9 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                     placeholder="0.00"
                     disabled={!isDraft}
                     {...register("committedAmount", { valueAsNumber: true })}
-                    className={errors.committedAmount ? "border-destructive" : ""}
+                    className={
+                      errors.committedAmount ? "border-destructive" : ""
+                    }
                   />
                   {errors.committedAmount && (
                     <p className="text-xs text-destructive">
@@ -719,8 +767,8 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
             </DialogTitle>
             <DialogDescription>
               Enter the new committed amount. The current budget will move to{" "}
-              <strong>Revised</strong>, and a new revision budget will be created
-              in <strong>Confirmed</strong> status.
+              <strong>Revised</strong>, and a new revision budget will be
+              created in <strong>Confirmed</strong> status.
             </DialogDescription>
           </DialogHeader>
 
@@ -788,14 +836,16 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
             {isLoadingDetail ? (
               <div className="flex h-40 flex-col items-center justify-center gap-3">
                 <Spinner className="size-6 text-primary" />
-                <p className="text-xs text-muted-foreground">Loading lines...</p>
+                <p className="text-xs text-muted-foreground">
+                  Loading lines...
+                </p>
               </div>
             ) : !achievedDetail?.items || achievedDetail.items.length === 0 ? (
               <div className="flex h-36 flex-col items-center justify-center gap-2 text-center text-muted-foreground">
                 <FileText className="size-8 opacity-40" />
                 <p className="text-sm">
-                  No invoices or bills have been posted with this analytic tag in
-                  this period.
+                  No invoices or bills have been posted with this analytic tag
+                  in this period.
                 </p>
               </div>
             ) : (
@@ -805,7 +855,9 @@ export function BudgetForm({ initialData }: BudgetFormProps) {
                     <TableRow>
                       <TableHead>Document / Number</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Amount Contributed</TableHead>
+                      <TableHead className="text-right">
+                        Amount Contributed
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

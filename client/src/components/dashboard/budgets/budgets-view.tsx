@@ -16,6 +16,8 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { type Budget, type BudgetStatus, fetchBudgets } from "./budgets-api";
 import { formatCurrency } from "../reports/reports-api";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
+import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,44 +32,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function formatDateDMY(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  const parts = dateStr.split("-");
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-  return dateStr;
-}
-
-export function BudgetStatusBadge({ status }: { status: BudgetStatus | string }) {
-  switch (status) {
-    case "draft":
-      return (
-        <span className="inline-flex items-center rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-          Draft
-        </span>
-      );
-    case "confirmed":
-      return (
-        <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
-          Confirmed
-        </span>
-      );
-    case "revised":
-      return (
-        <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:border-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
-          Revised
-        </span>
-      );
-    case "cancelled":
-      return (
-        <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
-          Cancelled
-        </span>
-      );
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
+export function BudgetStatusBadge({
+  status,
+}: {
+  status: BudgetStatus | string;
+}) {
+  const labels: Record<string, string> = {
+    draft: "Draft",
+    confirmed: "Confirmed",
+    revised: "Revised",
+    cancelled: "Cancelled",
+  };
+  return <StatusBadge status={labels[status] || status} />;
 }
 
 interface MiniPieProps {
@@ -85,7 +61,7 @@ function MiniPieChart({ committedAmount, achievedAmount }: MiniPieProps) {
     }
     return [
       { name: "Achieved", value: achieved, color: "#0ea5e9" }, // sky-500
-      { name: "Balance", value: balance, color: "#f43f5e" },  // rose-500
+      { name: "Balance", value: balance, color: "#f43f5e" }, // rose-500
     ];
   }, [achieved, balance, committedAmount]);
 
@@ -184,7 +160,7 @@ export function BudgetsView() {
         </div>
 
         {/* Center Search Input */}
-        <div className="relative min-w-[240px] flex-1 max-w-md">
+        <div className="relative min-w-60 flex-1 max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search budgets, responsible, analytics..."
@@ -242,7 +218,9 @@ export function BudgetsView() {
               <PiggyBank className="size-6" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">No Budgets Found</h3>
+              <h3 className="font-semibold text-foreground">
+                No Budgets Found
+              </h3>
               <p className="text-sm text-muted-foreground">
                 {search
                   ? `No budgets matching "${search}".`
@@ -297,10 +275,10 @@ export function BudgetsView() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDateDMY(b.periodStart)}
+                      {formatDate(b.periodStart)}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDateDMY(b.periodEnd)}
+                      {formatDate(b.periodEnd)}
                     </TableCell>
                     <TableCell>
                       <BudgetStatusBadge status={b.status} />
@@ -347,13 +325,13 @@ export function BudgetsView() {
                       <span className="font-medium text-foreground/80 min-w-18">
                         Start Date
                       </span>
-                      <span>{formatDateDMY(b.periodStart)}</span>
+                      <span>{formatDate(b.periodStart)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-foreground/80 min-w-18">
                         End Date
                       </span>
-                      <span>{formatDateDMY(b.periodEnd)}</span>
+                      <span>{formatDate(b.periodEnd)}</span>
                     </div>
                   </div>
 

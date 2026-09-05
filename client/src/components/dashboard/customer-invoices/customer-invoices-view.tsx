@@ -8,6 +8,9 @@ import { FileText, Plus, Search, ShoppingBag } from "lucide-react";
 import { useCustomerInvoices } from "./customer-invoices-hooks";
 import type { InvoiceStatus } from "./customer-invoices-api";
 import { useUserPermissions } from "@/lib/use-user-permissions";
+import { DataTable } from "@/components/primitives/DataTable";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,50 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 export function getInvoiceStatusBadge(status: InvoiceStatus) {
-  switch (status) {
-    case "Paid":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-2.5 py-0.5">
-          Paid
-        </Badge>
-      );
-    case "Partial":
-      return (
-        <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-2.5 py-0.5">
-          Partial
-        </Badge>
-      );
-    case "Not Paid":
-    default:
-      return (
-        <Badge variant="destructive" className="font-medium px-2.5 py-0.5">
-          Not Paid
-        </Badge>
-      );
-  }
+  return <StatusBadge status={status} />;
 }
 
 export function CustomerInvoicesView() {
@@ -81,11 +42,14 @@ export function CustomerInvoicesView() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data: customerInvoices = [], isLoading, isError } =
-    useCustomerInvoices({
-      search,
-      status: statusFilter,
-    });
+  const {
+    data: customerInvoices = [],
+    isLoading,
+    isError,
+  } = useCustomerInvoices({
+    search,
+    status: statusFilter,
+  });
 
   const statusTabs = [
     { id: "all", label: "All" },
@@ -132,10 +96,11 @@ export function CustomerInvoicesView() {
               key={tab.id}
               type="button"
               onClick={() => setStatusFilter(tab.id)}
-              className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${isActive
+              className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                isActive
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
+              }`}
             >
               {tab.label}
             </button>
@@ -144,79 +109,81 @@ export function CustomerInvoicesView() {
       </div>
 
       {/* ─── Main Table Card ─── */}
-      <Card className="border border-border/80 shadow-xs">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex min-h-64 items-center justify-center">
-              <Spinner />
-            </div>
-          ) : isError ? (
-            <div className="py-16 text-center text-sm text-destructive">
-              Failed to load customer invoices. Please try refreshing.
-            </div>
-          ) : customerInvoices.length === 0 ? (
-            <div className="py-16 text-center text-sm text-muted-foreground flex flex-col items-center gap-3">
-              <FileText className="size-10 text-muted-foreground/50" />
-              <p className="font-medium">No customer invoices found.</p>
-              <Button
-                variant="outline"
-                size="sm"
-                nativeButton={false}
-                render={<Link href="/sales-orders" />}
-              >
-                Go to Sales Orders to create an invoice
-              </Button>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="w-40 font-semibold">Invoice No.</TableHead>
-                  <TableHead className="font-semibold">Customer Name</TableHead>
-                  <TableHead className="w-36 font-semibold">Invoice Date</TableHead>
-                  <TableHead className="w-36 font-semibold">Due Date</TableHead>
-                  <TableHead className="w-32 font-semibold">Status</TableHead>
-                  <TableHead className="w-36 text-right font-semibold">
-                    Total
-                  </TableHead>
-                  <TableHead className="w-36 text-right font-semibold">
-                    Amount Due
-                  </TableHead>
+      <DataTable className="border-border/80">
+        {isLoading ? (
+          <div className="flex min-h-64 items-center justify-center">
+            <Spinner />
+          </div>
+        ) : isError ? (
+          <div className="py-16 text-center text-sm text-destructive">
+            Failed to load customer invoices. Please try refreshing.
+          </div>
+        ) : customerInvoices.length === 0 ? (
+          <div className="py-16 text-center text-sm text-muted-foreground flex flex-col items-center gap-3">
+            <FileText className="size-10 text-muted-foreground/50" />
+            <p className="font-medium">No customer invoices found.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href="/sales-orders" />}
+            >
+              Go to Sales Orders to create an invoice
+            </Button>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="w-40 font-semibold">
+                  Invoice No.
+                </TableHead>
+                <TableHead className="font-semibold">Customer Name</TableHead>
+                <TableHead className="w-36 font-semibold">
+                  Invoice Date
+                </TableHead>
+                <TableHead className="w-36 font-semibold">Due Date</TableHead>
+                <TableHead className="w-32 font-semibold">Status</TableHead>
+                <TableHead className="w-36 text-right font-semibold">
+                  Total
+                </TableHead>
+                <TableHead className="w-36 text-right font-semibold">
+                  Amount Due
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {customerInvoices.map((inv) => (
+                <TableRow
+                  key={inv.id}
+                  onClick={() => router.push(`/customer-invoices/${inv.id}`)}
+                  className="cursor-pointer hover:bg-muted/30 transition-colors"
+                >
+                  <TableCell className="font-mono font-semibold text-primary">
+                    {inv.invoiceNumber}
+                  </TableCell>
+                  <TableCell className="font-medium text-foreground">
+                    {inv.customerName || "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(inv.invoiceDate)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(inv.dueDate)}
+                  </TableCell>
+                  <TableCell>{getInvoiceStatusBadge(inv.status)}</TableCell>
+                  <TableCell className="text-right font-mono font-semibold text-foreground">
+                    {formatCurrency(inv.totalAmount)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-bold text-foreground">
+                    {formatCurrency(inv.amountDue)}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customerInvoices.map((inv) => (
-                  <TableRow
-                    key={inv.id}
-                    onClick={() => router.push(`/customer-invoices/${inv.id}`)}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
-                  >
-                    <TableCell className="font-mono font-semibold text-primary">
-                      {inv.invoiceNumber}
-                    </TableCell>
-                    <TableCell className="font-medium text-foreground">
-                      {inv.customerName || "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(inv.invoiceDate)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(inv.dueDate)}
-                    </TableCell>
-                    <TableCell>{getInvoiceStatusBadge(inv.status)}</TableCell>
-                    <TableCell className="text-right font-mono font-semibold text-foreground">
-                      {formatCurrency(inv.totalAmount)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-bold text-foreground">
-                      {formatCurrency(inv.amountDue)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </DataTable>
     </div>
   );
 }

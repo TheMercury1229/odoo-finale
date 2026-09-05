@@ -61,9 +61,7 @@ const createJournalEntrySchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   journalId: z.string().min(1, "Journal selection is required"),
   reference: z.string().optional(),
-  lines: z
-    .array(lineSchema)
-    .min(2, "Journal entry must have at least 2 lines"),
+  lines: z.array(lineSchema).min(2, "Journal entry must have at least 2 lines"),
 });
 
 type FormValues = z.infer<typeof createJournalEntrySchema>;
@@ -119,7 +117,9 @@ export function JournalEntryCreateForm() {
     queryFn: () => fetchContacts({ includeArchived: false, view: "list" }),
   });
   const contacts =
-    contactsResult && "contacts" in contactsResult ? contactsResult.contacts : [];
+    contactsResult && "contacts" in contactsResult
+      ? contactsResult.contacts
+      : [];
 
   const unarchivedAccounts = useMemo(
     () => accounts.filter((acc) => !acc.isArchived),
@@ -146,7 +146,8 @@ export function JournalEntryCreateForm() {
   // Compare in cents to avoid IEEE 754 floating point issues
   const totalDebitCents = Math.round(totalDebit * 100);
   const totalCreditCents = Math.round(totalCredit * 100);
-  const isBalanced = totalDebitCents === totalCreditCents && totalDebitCents > 0;
+  const isBalanced =
+    totalDebitCents === totalCreditCents && totalDebitCents > 0;
   const difference = Math.abs(totalDebitCents - totalCreditCents) / 100;
 
   async function onSubmit(data: FormValues) {
@@ -255,7 +256,10 @@ export function JournalEntryCreateForm() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="journalId" className="font-semibold text-foreground">
+                <Label
+                  htmlFor="journalId"
+                  className="font-semibold text-foreground"
+                >
                   Journal <span className="text-destructive">*</span>
                 </Label>
                 <Controller
@@ -267,7 +271,13 @@ export function JournalEntryCreateForm() {
                       onValueChange={field.onChange}
                     >
                       <SelectTrigger id="journalId" className="w-full">
-                        <SelectValue placeholder="Select a journal" />
+                        <SelectValue placeholder="Select a journal">
+                          {
+                            journals.find(
+                              (journal) => journal.id === field.value,
+                            )?.name
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
                         {isLoadingJournals ? (
@@ -297,7 +307,10 @@ export function JournalEntryCreateForm() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="reference" className="font-semibold text-foreground">
+                <Label
+                  htmlFor="reference"
+                  className="font-semibold text-foreground"
+                >
                   Reference / Narration
                 </Label>
                 <Input
@@ -336,12 +349,17 @@ export function JournalEntryCreateForm() {
                       <TableHead className="font-semibold text-foreground text-right w-[18%]">
                         Credit
                       </TableHead>
-                      {canCreateTransaction && <TableHead className="w-[4%]"></TableHead>}
+                      {canCreateTransaction && (
+                        <TableHead className="w-[4%]"></TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {fields.map((fieldItem, index) => (
-                      <TableRow key={fieldItem.id} className="hover:bg-muted/20">
+                      <TableRow
+                        key={fieldItem.id}
+                        className="hover:bg-muted/20"
+                      >
                         {/* Account Select */}
                         <TableCell className="align-top py-2">
                           <Controller
@@ -353,7 +371,13 @@ export function JournalEntryCreateForm() {
                                 onValueChange={field.onChange}
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select account" />
+                                  <SelectValue placeholder="Select account">
+                                    {
+                                      unarchivedAccounts.find(
+                                        (account) => account.id === field.value,
+                                      )?.name
+                                    }
+                                  </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="max-h-60">
                                   {isLoadingAccounts ? (
@@ -391,7 +415,13 @@ export function JournalEntryCreateForm() {
                                 }
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select partner (optional)" />
+                                  <SelectValue placeholder="Select partner (optional)">
+                                    {
+                                      unarchivedContacts.find(
+                                        (contact) => contact.id === field.value,
+                                      )?.name
+                                    }
+                                  </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="max-h-60">
                                   <SelectItem value="none">
@@ -524,7 +554,9 @@ export function JournalEntryCreateForm() {
             <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-4">
               <div className="flex flex-wrap items-center justify-between gap-4 font-medium text-sm">
                 <div>
-                  <span className="text-muted-foreground mr-2">Total Debit:</span>
+                  <span className="text-muted-foreground mr-2">
+                    Total Debit:
+                  </span>
                   <span className="font-mono font-bold text-foreground">
                     Rs.{" "}
                     {totalDebit.toLocaleString("en-IN", {
@@ -534,7 +566,9 @@ export function JournalEntryCreateForm() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground mr-2">Total Credit:</span>
+                  <span className="text-muted-foreground mr-2">
+                    Total Credit:
+                  </span>
                   <span className="font-mono font-bold text-foreground">
                     Rs.{" "}
                     {totalCredit.toLocaleString("en-IN", {
@@ -544,7 +578,9 @@ export function JournalEntryCreateForm() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground mr-2">Difference:</span>
+                  <span className="text-muted-foreground mr-2">
+                    Difference:
+                  </span>
                   <span
                     className={cn(
                       "font-mono font-bold",
@@ -568,18 +604,21 @@ export function JournalEntryCreateForm() {
                   <AlertTriangle className="size-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
                   <div>
                     <span className="font-semibold">
-                      Blocking warning if the debit and credit amount don't match:{" "}
+                      Blocking warning if the debit and credit amount don't
+                      match:{" "}
                     </span>
                     {totalDebitCents === 0 && totalCreditCents === 0 ? (
                       <span>
-                        Enter debit and credit amounts. Both totals must be greater than zero.
+                        Enter debit and credit amounts. Both totals must be
+                        greater than zero.
                       </span>
                     ) : (
                       <span>
                         Debit and credit totals do not match. Debit sum is Rs.{" "}
                         {totalDebit.toFixed(2)}, Credit sum is Rs.{" "}
                         {totalCredit.toFixed(2)} (Difference: Rs.{" "}
-                        {difference.toFixed(2)}). You cannot post until both sides are equal.
+                        {difference.toFixed(2)}). You cannot post until both
+                        sides are equal.
                       </span>
                     )}
                   </div>
@@ -590,14 +629,14 @@ export function JournalEntryCreateForm() {
                 <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-emerald-800 dark:text-emerald-300 text-sm font-medium">
                   <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   <span>
-                    Debits and credits are balanced (Rs. {totalDebit.toFixed(2)}). Entry is ready to post.
+                    Debits and credits are balanced (Rs. {totalDebit.toFixed(2)}
+                    ). Entry is ready to post.
                   </span>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
-
       </form>
     </div>
   );

@@ -6,6 +6,7 @@ import { ArrowLeft, CreditCard, FileText, Printer } from "lucide-react";
 
 import { usePortalInvoice } from "@/components/portal/portal-hooks";
 import { getPortalStatusBadge } from "@/app/(portal)/portal/bills/page";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { triggerPrint } from "@/lib/print";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -20,34 +21,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 export default function PortalInvoiceDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const { data: invoice, isLoading, isError } = usePortalInvoice(
-    params?.id || "",
-  );
+  const {
+    data: invoice,
+    isLoading,
+    isError,
+  } = usePortalInvoice(params?.id || "");
 
   if (isLoading) {
     return (
@@ -66,7 +47,8 @@ export default function PortalInvoiceDetailPage() {
               Invoice Not Found
             </h2>
             <p className="text-sm text-muted-foreground">
-              The invoice you are looking for could not be found or you do not have permission to view it.
+              The invoice you are looking for could not be found or you do not
+              have permission to view it.
             </p>
             <Button
               variant="outline"
@@ -169,7 +151,9 @@ export default function PortalInvoiceDetailPage() {
             {/* Balances summary box */}
             <div className="flex items-center gap-6 rounded-lg border bg-muted/40 px-4 py-2.5">
               <div>
-                <div className="text-xs text-muted-foreground">Total Amount</div>
+                <div className="text-xs text-muted-foreground">
+                  Total Amount
+                </div>
                 <div className="text-base font-mono font-bold text-foreground">
                   {formatCurrency(invoice.totalAmount)}
                 </div>
@@ -194,7 +178,9 @@ export default function PortalInvoiceDetailPage() {
           {/* ─── Invoice Metadata ─── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-lg bg-muted/20 border">
             <div>
-              <Label className="text-xs text-muted-foreground">Invoice Date</Label>
+              <Label className="text-xs text-muted-foreground">
+                Invoice Date
+              </Label>
               <div className="text-sm font-medium text-foreground mt-0.5">
                 {formatDate(invoice.invoiceDate)}
               </div>
@@ -207,7 +193,9 @@ export default function PortalInvoiceDetailPage() {
             </div>
             {invoice.soNumber && (
               <div>
-                <Label className="text-xs text-muted-foreground">Sales Order</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Sales Order
+                </Label>
                 <div className="text-sm font-mono font-medium text-foreground mt-0.5">
                   {invoice.soNumber}
                 </div>
@@ -293,7 +281,9 @@ export default function PortalInvoiceDetailPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="font-semibold">Payment No.</TableHead>
+                      <TableHead className="font-semibold">
+                        Payment No.
+                      </TableHead>
                       <TableHead className="font-semibold">Date</TableHead>
                       <TableHead className="font-semibold">Method</TableHead>
                       <TableHead className="text-right font-semibold">

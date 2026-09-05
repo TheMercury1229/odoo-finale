@@ -178,7 +178,7 @@ export function CustomerInvoiceDetailView({
                     href={`/sales-orders/${invoice.salesOrderId}`}
                     className="font-medium text-primary underline"
                   >
-                    {invoice.soNumber || invoice.salesOrderId}
+                    {invoice.soNumber || "—"}
                   </Link>
                 ) : (
                   "—"
@@ -220,7 +220,9 @@ export function CustomerInvoiceDetailView({
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Payment Status
                 </Label>
-                <div className="mt-1">{getInvoiceStatusBadge(invoice.status)}</div>
+                <div className="mt-1">
+                  {getInvoiceStatusBadge(invoice.status)}
+                </div>
               </div>
             </div>
 
@@ -252,7 +254,7 @@ export function CustomerInvoiceDetailView({
                     Journal Entry
                   </Label>
                   <div className="text-xs font-mono text-muted-foreground mt-0.5">
-                    {invoice.journalEntryId}
+                    Posted
                   </div>
                 </div>
               )}
@@ -292,12 +294,15 @@ export function CustomerInvoiceDetailView({
                 </TableHeader>
                 <TableBody>
                   {invoice.lines?.map((line, index) => (
-                    <TableRow key={line.id || index} className="hover:bg-muted/20">
+                    <TableRow
+                      key={line.id || index}
+                      className="hover:bg-muted/20"
+                    >
                       <TableCell className="text-center font-mono font-medium text-muted-foreground">
                         {index + 1}
                       </TableCell>
                       <TableCell className="font-medium text-foreground">
-                        {line.productName || line.productId}
+                        {line.productName || "—"}
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-md print:bg-transparent print:p-0 print:text-black">
@@ -314,7 +319,9 @@ export function CustomerInvoiceDetailView({
                         {formatCurrency(line.taxAmount)}
                       </TableCell>
                       <TableCell className="text-right font-mono font-semibold text-foreground">
-                        {formatCurrency(line.total || line.subtotal + line.taxAmount)}
+                        {formatCurrency(
+                          line.total || line.subtotal + line.taxAmount,
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -337,13 +344,17 @@ export function CustomerInvoiceDetailView({
                           <TableRow className="bg-muted/30">
                             <TableHead className="h-8">Date</TableHead>
                             <TableHead className="h-8">Method</TableHead>
-                            <TableHead className="h-8 text-right">Amount</TableHead>
+                            <TableHead className="h-8 text-right">
+                              Amount
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {payments.map((p) => (
                             <TableRow key={p.id}>
-                              <TableCell className="py-2">{formatDate(p.date)}</TableCell>
+                              <TableCell className="py-2">
+                                {formatDate(p.date)}
+                              </TableCell>
                               <TableCell className="py-2 capitalize font-medium">
                                 {p.method}
                               </TableCell>
@@ -405,11 +416,15 @@ export function CustomerInvoiceDetailView({
           {/* Printable Signature Section */}
           <div className="hidden print:flex justify-between pt-16 mt-8 border-t text-xs text-gray-500">
             <div>
-              <p className="font-semibold text-gray-800">Authorized Signature</p>
+              <p className="font-semibold text-gray-800">
+                Authorized Signature
+              </p>
               <div className="w-48 border-b border-gray-400 mt-10" />
             </div>
             <div className="text-right">
-              <p className="font-semibold text-gray-800">Customer Acknowledgement</p>
+              <p className="font-semibold text-gray-800">
+                Customer Acknowledgement
+              </p>
               <div className="w-48 border-b border-gray-400 mt-10" />
             </div>
           </div>

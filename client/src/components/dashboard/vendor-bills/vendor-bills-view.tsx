@@ -6,7 +6,10 @@ import { useEffect, useState } from "react";
 import { FileText, Plus, Printer, Search, ShoppingCart } from "lucide-react";
 
 import { useVendorBills } from "./vendor-bills-hooks";
+import { DataTable } from "@/components/primitives/DataTable";
 import type { BillStatus } from "./vendor-bills-api";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { triggerPrint } from "@/lib/print";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,50 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 export function getBillStatusBadge(status: BillStatus) {
-  switch (status) {
-    case "Paid":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-2.5 py-0.5">
-          Paid
-        </Badge>
-      );
-    case "Partial":
-      return (
-        <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-2.5 py-0.5">
-          Partial
-        </Badge>
-      );
-    case "Not Paid":
-    default:
-      return (
-        <Badge variant="destructive" className="font-medium px-2.5 py-0.5">
-          Not Paid
-        </Badge>
-      );
-  }
+  return <StatusBadge status={status} />;
 }
 
 export function VendorBillsView() {
@@ -80,7 +41,11 @@ export function VendorBillsView() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data: vendorBills = [], isLoading, isError } = useVendorBills({
+  const {
+    data: vendorBills = [],
+    isLoading,
+    isError,
+  } = useVendorBills({
     search,
     status: statusFilter,
   });
@@ -143,7 +108,9 @@ export function VendorBillsView() {
       {/* ─── Heading Row ─── */}
       <div className="flex items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Vendor Bills</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Vendor Bills
+          </h1>
           {!isLoading && vendorBills.length > 0 ? (
             <Badge variant="secondary">{vendorBills.length}</Badge>
           ) : null}
@@ -198,17 +165,23 @@ export function VendorBillsView() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="overflow-hidden border border-border/80">
+        <DataTable className="border-border/80">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
                 <TableHead className="w-40 font-semibold">Bill No.</TableHead>
                 <TableHead className="font-semibold">Vendor Name</TableHead>
-                <TableHead className="w-32 font-semibold">Invoice Date</TableHead>
+                <TableHead className="w-32 font-semibold">
+                  Invoice Date
+                </TableHead>
                 <TableHead className="w-32 font-semibold">Due Date</TableHead>
                 <TableHead className="w-28 font-semibold">Status</TableHead>
-                <TableHead className="w-36 text-right font-semibold">Total</TableHead>
-                <TableHead className="w-36 text-right font-semibold">Amount Due</TableHead>
+                <TableHead className="w-36 text-right font-semibold">
+                  Total
+                </TableHead>
+                <TableHead className="w-36 text-right font-semibold">
+                  Amount Due
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -259,7 +232,7 @@ export function VendorBillsView() {
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </DataTable>
       )}
     </div>
   );

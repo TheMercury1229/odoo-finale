@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 
 import { useStockReport } from "./reports-hooks";
-import { formatCurrency, type StockReportItem } from "./reports-api";
+import type { StockReportItem } from "./reports-api";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { triggerPrint } from "@/lib/print";
+import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,37 +48,7 @@ import {
 } from "@/components/ui/table";
 
 function getStatusBadge(status: StockReportItem["status"]) {
-  switch (status) {
-    case "In Stock":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-1 text-xs">
-          <CheckCircle2 className="size-3" />
-          In Stock
-        </Badge>
-      );
-    case "Low Stock":
-      return (
-        <Badge
-          variant="outline"
-          className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium gap-1 text-xs"
-        >
-          <AlertTriangle className="size-3" />
-          Low Stock
-        </Badge>
-      );
-    case "Out of Stock":
-      return (
-        <Badge
-          variant="destructive"
-          className="font-medium gap-1 text-xs"
-        >
-          <XCircle className="size-3" />
-          Out of Stock
-        </Badge>
-      );
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
-  }
+  return <StatusBadge status={status} />;
 }
 
 export function StockReportView() {
@@ -146,7 +118,8 @@ export function StockReportView() {
               Stock & Inventory Report
             </h1>
             <p className="text-xs text-muted-foreground">
-              Real-time stock on hand, units purchased vs sold, and inventory valuation
+              Real-time stock on hand, units purchased vs sold, and inventory
+              valuation
             </p>
           </div>
         </div>
@@ -237,7 +210,7 @@ export function StockReportView() {
       <Card className="border border-border/60 shadow-xs print:hidden">
         <CardContent className="pt-5 pb-4">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[220px]">
+            <div className="relative min-w-55 flex-1">
               <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
               <Input
                 placeholder="Search by product name or category..."
@@ -247,7 +220,7 @@ export function StockReportView() {
               />
             </div>
 
-            <div className="w-[160px]">
+            <div className="w-40">
               <Select
                 value={categoryFilter}
                 onValueChange={(val) => setCategoryFilter(val ?? "all")}
@@ -266,7 +239,7 @@ export function StockReportView() {
               </Select>
             </div>
 
-            <div className="w-[150px]">
+            <div className="w-37.5">
               <Select
                 value={statusFilter}
                 onValueChange={(val) => setStatusFilter(val ?? "all")}
@@ -283,7 +256,9 @@ export function StockReportView() {
               </Select>
             </div>
 
-            {(searchQuery || statusFilter !== "all" || categoryFilter !== "all") && (
+            {(searchQuery ||
+              statusFilter !== "all" ||
+              categoryFilter !== "all") && (
               <Button
                 type="button"
                 variant="ghost"
@@ -320,7 +295,12 @@ export function StockReportView() {
                 Stock & Inventory Report
               </h2>
               <p className="text-xs text-gray-600 mt-0.5">
-                Generated on: {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                Generated on:{" "}
+                {new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </p>
             </div>
           </div>
@@ -333,7 +313,8 @@ export function StockReportView() {
                 Inventory Status & Valuation
               </CardTitle>
               <CardDescription className="text-xs">
-                Showing {filteredProducts.length} of {products.length} goods items
+                Showing {filteredProducts.length} of {products.length} goods
+                items
               </CardDescription>
             </div>
           </div>
@@ -343,21 +324,42 @@ export function StockReportView() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="font-semibold text-foreground">Product Name</TableHead>
-                <TableHead className="font-semibold text-foreground">Category</TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Cost Price</TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Sales Price</TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Purchased</TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Sold</TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Stock on Hand</TableHead>
-                <TableHead className="font-semibold text-foreground">Status</TableHead>
-                <TableHead className="text-right font-semibold text-foreground">Valuation</TableHead>
+                <TableHead className="font-semibold text-foreground">
+                  Product Name
+                </TableHead>
+                <TableHead className="font-semibold text-foreground">
+                  Category
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Cost Price
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Sales Price
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Purchased
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Sold
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Stock on Hand
+                </TableHead>
+                <TableHead className="font-semibold text-foreground">
+                  Status
+                </TableHead>
+                <TableHead className="text-right font-semibold text-foreground">
+                  Valuation
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="py-12 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={9}
+                    className="py-12 text-center text-muted-foreground"
+                  >
                     <div className="flex items-center justify-center gap-2">
                       <Spinner className="size-4" />
                       Loading inventory stock data...
@@ -366,7 +368,10 @@ export function StockReportView() {
                 </TableRow>
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="py-12 text-center text-muted-foreground text-sm">
+                  <TableCell
+                    colSpan={9}
+                    className="py-12 text-center text-muted-foreground text-sm"
+                  >
                     No products matching your filters.
                   </TableCell>
                 </TableRow>
@@ -394,9 +399,7 @@ export function StockReportView() {
                     <TableCell className="text-right font-mono text-sm font-semibold tabular-nums">
                       {p.currentStock}
                     </TableCell>
-                    <TableCell>
-                      {getStatusBadge(p.status)}
-                    </TableCell>
+                    <TableCell>{getStatusBadge(p.status)}</TableCell>
                     <TableCell className="text-right font-mono text-sm font-semibold tabular-nums text-foreground">
                       {formatCurrency(p.valuation)}
                     </TableCell>

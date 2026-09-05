@@ -6,6 +6,7 @@ import { ArrowLeft, CreditCard, Printer, Receipt } from "lucide-react";
 
 import { usePortalBill } from "@/components/portal/portal-hooks";
 import { getPortalStatusBadge } from "@/app/(portal)/portal/bills/page";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { triggerPrint } from "@/lib/print";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -19,28 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
 
 export default function PortalBillDetailPage() {
   const router = useRouter();
@@ -64,7 +43,8 @@ export default function PortalBillDetailPage() {
               Bill Not Found
             </h2>
             <p className="text-sm text-muted-foreground">
-              The bill you are looking for could not be found or you do not have permission to view it.
+              The bill you are looking for could not be found or you do not have
+              permission to view it.
             </p>
             <Button
               variant="outline"
@@ -167,7 +147,9 @@ export default function PortalBillDetailPage() {
             {/* Balances summary box */}
             <div className="flex items-center gap-6 rounded-lg border bg-muted/40 px-4 py-2.5">
               <div>
-                <div className="text-xs text-muted-foreground">Total Amount</div>
+                <div className="text-xs text-muted-foreground">
+                  Total Amount
+                </div>
                 <div className="text-base font-mono font-bold text-foreground">
                   {formatCurrency(bill.totalAmount)}
                 </div>
@@ -205,7 +187,9 @@ export default function PortalBillDetailPage() {
             </div>
             {bill.poNumber && (
               <div>
-                <Label className="text-xs text-muted-foreground">Purchase Order</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Purchase Order
+                </Label>
                 <div className="text-sm font-mono font-medium text-foreground mt-0.5">
                   {bill.poNumber}
                 </div>
@@ -285,7 +269,9 @@ export default function PortalBillDetailPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="font-semibold">Payment No.</TableHead>
+                      <TableHead className="font-semibold">
+                        Payment No.
+                      </TableHead>
                       <TableHead className="font-semibold">Date</TableHead>
                       <TableHead className="font-semibold">Method</TableHead>
                       <TableHead className="text-right font-semibold">

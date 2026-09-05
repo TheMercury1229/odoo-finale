@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { PageHeader } from "@/components/primitives/PageHeader";
 
 type ContactView = "list" | "kanban";
 
@@ -77,22 +78,24 @@ export function ContactsView() {
       </div>
 
       {/* ─── Heading row ─── */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Contacts</h1>
-          {!contactsQuery.isPending && contacts.length > 0 ? (
-            <Badge variant="secondary">{contacts.length}</Badge>
-          ) : null}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-pressed={includeArchived}
-          onClick={() => setIncludeArchived((value) => !value)}
-        >
-          {includeArchived ? "Hide archived" : "Show archived"}
-        </Button>
-      </div>
+      <PageHeader
+        title="Contacts"
+        actions={
+          <>
+            {!contactsQuery.isPending && contacts.length > 0 ? (
+              <Badge variant="secondary">{contacts.length}</Badge>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              aria-pressed={includeArchived}
+              onClick={() => setIncludeArchived((value) => !value)}
+            >
+              {includeArchived ? "Hide archived" : "Show archived"}
+            </Button>
+          </>
+        }
+      />
 
       {/* ─── Content ─── */}
       {contactsQuery.isPending ? (

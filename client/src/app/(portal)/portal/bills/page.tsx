@@ -8,6 +8,8 @@ import { useState } from "react";
 import { usePortalBills } from "@/components/portal/portal-hooks";
 import type { PortalDocStatus } from "@/components/portal/portal-api";
 import { triggerPrint } from "@/lib/print";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,50 +24,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatCurrency(amount: number) {
-  return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 export function getPortalStatusBadge(status: PortalDocStatus) {
-  switch (status) {
-    case "Paid":
-      return (
-        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-2.5 py-0.5">
-          Paid
-        </Badge>
-      );
-    case "Partial":
-      return (
-        <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-2.5 py-0.5">
-          Partial
-        </Badge>
-      );
-    case "Not Paid":
-    default:
-      return (
-        <Badge variant="destructive" className="font-medium px-2.5 py-0.5">
-          Not Paid
-        </Badge>
-      );
-  }
+  return <StatusBadge status={status} />;
 }
 
 export default function PortalBillsPage() {
@@ -94,12 +54,9 @@ export default function PortalBillsPage() {
             View all vendor bills and track payment status.
           </p>
         </div>
-
-
       </div>
 
       {/* ─── Printable Header (Only Visible in Print) ─── */}
-
 
       {/* ─── Content ─── */}
       {isLoading ? (
@@ -139,7 +96,9 @@ export default function PortalBillsPage() {
                 <TableHead className="font-semibold">Bill Date</TableHead>
                 <TableHead className="font-semibold">Due Date</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold text-right">Total</TableHead>
+                <TableHead className="font-semibold text-right">
+                  Total
+                </TableHead>
                 <TableHead className="font-semibold text-right">
                   Amount Due
                 </TableHead>
