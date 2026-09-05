@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { ContactsView } from "@/components/dashboard/contacts/contacts-view";
 
 export default function ContactsPage() {
-  return <PlaceholderPage title="Contacts" />;
+  return <ContactsView />;
 }

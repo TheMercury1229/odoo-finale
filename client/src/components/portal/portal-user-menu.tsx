@@ -3,7 +3,7 @@
 import { LogOut, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth";
+import { ImageUploader } from "@/components/uploadthing/image-uploader";
 
 function getInitials(name: string) {
   return name
@@ -40,6 +41,10 @@ export function PortalUserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
         <Avatar size="sm">
+          <AvatarImage
+            src={user?.image || undefined}
+            alt={user?.name || "Account"}
+          />
           <AvatarFallback>
             {getInitials(user?.name || "Account")}
           </AvatarFallback>
@@ -58,6 +63,13 @@ export function PortalUserMenu() {
             <LogOut />
             Log out
           </DropdownMenuItem>
+          <div className="px-1.5 py-1.5">
+            <ImageUploader
+              onUploadComplete={async (file) => {
+                await authClient.updateUser({ image: file.ufsUrl });
+              }}
+            />
+          </div>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

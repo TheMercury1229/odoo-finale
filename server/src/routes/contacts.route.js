@@ -2,7 +2,6 @@ import express from "express";
 import { requirePermission } from "../middleware/organization-access.js";
 import { validateBody } from "../middleware/validate-body.js";
 import {
-  archiveContactSchema,
   createContactSchema,
   updateContactSchema,
 } from "../validators/contacts.js";
@@ -35,17 +34,7 @@ router.patch(
   validateBody(updateContactSchema),
   updateContact,
 );
-router.patch(
-  "/:id/archive",
-  canArchiveContacts,
-  validateBody(archiveContactSchema),
-  archiveContact,
-);
-router.patch(
-  "/:id/unarchive",
-  canArchiveContacts,
-  validateBody(archiveContactSchema),
-  unarchiveContact,
-);
+router.patch("/:id/archive", canArchiveContacts, archiveContact);
+router.patch("/:id/unarchive", canArchiveContacts, unarchiveContact);
 
 export default router;

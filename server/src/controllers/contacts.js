@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, ilike, ne, or } from "drizzle-orm";
 import db from "../config/db.js";
 import { contact } from "../db/schema.js";
+import { auth } from "../lib/auth.js";
 
 const contactTypes = ["customer", "vendor", "both"];
 
@@ -30,10 +31,10 @@ async function emailConflict(organizationId, email, excludedId) {
 
 export async function createContact(req, res, next) {
   try {
-    const parsed = req.validatedBody;
+    const { password, ...contactData } = req.validatedBody;
     const values = {
-      ...parsed,
-      email: normalizeEmail(parsed.email),
+      ...contactData,
+      email: normalizeEmail(contactData.email),
       id: `contact_${randomUUID()}`,
       organizationId: req.organizationId,
     };
@@ -45,6 +46,30 @@ export async function createContact(req, res, next) {
           field: "email",
         });
     }
+
+    // Always create a portal user account for this contact
+    try {
+      const newUser = await auth.api.createUser({
+        body: {
+          email: values.email,
+          password,
+          name: values.name,
+          role: "contact",
+        },
+      });
+      if (newUser?.user?.id) {
+        values.userId = newUser.user.id;
+      }
+    } catch (userError) {
+      console.error("Failed to create user for contact:", userError);
+      return res.status(400).json({
+        error:
+          userError.message ||
+          "Failed to create user account. The email may already be in use.",
+        field: "email",
+      });
+    }
+
     const [created] = await db.insert(contact).values(values).returning();
     return res.status(201).json(created);
   } catch (error) {

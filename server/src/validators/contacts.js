@@ -12,7 +12,17 @@ const contactFields = {
   profileImageUrl: z.url("Profile image URL must be valid").optional(),
 };
 
-export const createContactSchema = z.object(contactFields).strict();
+export const createContactSchema = z
+  .object({
+    ...contactFields,
+    // Email is required because every contact must have a portal user account.
+    email: z.email("Email is required and must be valid"),
+    // Password is mandatory — a portal user is always created for each contact.
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
+  })
+  .strict();
 export const updateContactSchema = z
   .object({
     name: contactFields.name.optional(),
