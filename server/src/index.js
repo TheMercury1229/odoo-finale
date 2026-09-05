@@ -6,6 +6,8 @@ import cors from "cors";
 import contactsRouter from "./routes/contacts.route.js";
 import productsRouter from "./routes/products.route.js";
 import chartOfAccountsRouter from "./routes/chart-of-accounts.route.js";
+import journalsRouter from "./routes/journals.route.js";
+import journalEntriesRouter from "./routes/journal-entries.route.js";
 const port = process.env.PORT || 5000;
 const app = express();
 app.use(
@@ -21,6 +23,8 @@ app.use(express.json());
 app.use("/api/contacts", contactsRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/chart-of-accounts", chartOfAccountsRouter);
+app.use("/api/journals", journalsRouter);
+app.use("/api/journal-entries", journalEntriesRouter);
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });

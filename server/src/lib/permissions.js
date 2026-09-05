@@ -1,13 +1,16 @@
 import { createAccessControl } from "better-auth/plugins/access";
-import { defaultStatements } from "better-auth/plugins/organization/access";
+import { defaultStatements as orgStatements } from "better-auth/plugins/organization/access";
+import { defaultStatements as adminStatements } from "better-auth/plugins/admin/access";
 
 // Resources beyond the org defaults (member/invitation/organization/team)
 // that our domain actually needs access-controlled.
 const statement = {
-  ...defaultStatements,
+  ...adminStatements,
+  ...orgStatements,
   contact: ["view", "create", "update", "archive", "view_own"],
   product: ["create", "update", "archive"],
   chartOfAccounts: ["view", "create", "update", "archive"],
+  journal: ["view", "create"],
   transaction: ["create", "confirm", "record_payment"], // PO/Bill, SO/Invoice
   report: ["view"],
 };
@@ -17,9 +20,23 @@ export const ac = createAccessControl(statement);
 // Admin (Business Owner): full control, including archiving master data
 // and managing users/org membership.
 export const adminRole = ac.newRole({
+  user: [
+    "create",
+    "list",
+    "set-role",
+    "ban",
+    "impersonate",
+    "delete",
+    "set-password",
+    "set-email",
+    "get",
+    "update",
+  ],
+  session: ["list", "revoke", "delete"],
   contact: ["view", "create", "update", "archive"],
   product: ["create", "update", "archive"],
   chartOfAccounts: ["view", "create", "update", "archive"],
+  journal: ["view", "create"],
   transaction: ["create", "confirm", "record_payment"],
   report: ["view"],
   member: ["create", "update", "delete"],
@@ -33,6 +50,7 @@ export const accountantRole = ac.newRole({
   contact: ["view", "create", "update"],
   product: ["create", "update"],
   chartOfAccounts: ["view", "create", "update"],
+  journal: ["view", "create"],
   transaction: ["create", "confirm", "record_payment"],
   report: ["view"],
 });

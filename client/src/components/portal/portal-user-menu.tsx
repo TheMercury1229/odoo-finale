@@ -63,13 +63,7 @@ export function PortalUserMenu() {
             <LogOut />
             Log out
           </DropdownMenuItem>
-          <div className="px-1.5 py-1.5">
-            <ImageUploader
-              onUploadComplete={async (file) => {
-                await authClient.updateUser({ image: file.ufsUrl });
-              }}
-            />
-          </div>
+
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

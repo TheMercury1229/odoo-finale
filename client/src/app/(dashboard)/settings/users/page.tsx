@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { UsersManagementView } from "@/components/dashboard/settings/users-management-view";
 
 export default function UsersPage() {
-  return <PlaceholderPage title="Users" />;
+  return <UsersManagementView />;
 }

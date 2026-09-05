@@ -20,6 +20,16 @@ export const dashboardNav: NavSection[] = [
         url: "/chart-of-accounts",
         icon: "BookOpen",
       },
+      {
+        title: "Journals",
+        url: "/journals",
+        icon: "BookText",
+      },
+      {
+        title: "Journal Entries",
+        url: "/journal-entries",
+        icon: "FileSpreadsheet",
+      },
     ],
   },
   {

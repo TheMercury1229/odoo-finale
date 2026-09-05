@@ -17,14 +17,14 @@ const adminPassword = process.env.SEED_ADMIN_PASSWORD || "UrbanFurniture123!";
 const createdAt = new Date();
 
 const accounts = [
-  { id: "coa_bank", name: "Bank A/c", type: "asset" },
-  { id: "coa_purchase_expense", name: "Purchase Expense A/c", type: "expense" },
-  { id: "coa_debtors", name: "Debtors A/c", type: "asset" },
-  { id: "coa_creditors", name: "Creditors A/c", type: "liability" },
-  { id: "coa_sales_income", name: "Sales Income A/c", type: "income" },
-  { id: "coa_cash", name: "Cash A/c", type: "asset" },
-  { id: "coa_other_expense", name: "Other Expense A/c", type: "expense" },
-  { id: "coa_capital", name: "Capital A/c", type: "capital" },
+  { id: "coa_bank", name: "Bank", type: "asset" },
+  { id: "coa_purchase_expense", name: "Purchase Expense", type: "expense" },
+  { id: "coa_debtors", name: "Debtors", type: "asset" },
+  { id: "coa_creditors", name: "Creditors", type: "liability" },
+  { id: "coa_sales_income", name: "Sales Income", type: "income" },
+  { id: "coa_cash", name: "Cash", type: "asset" },
+  { id: "coa_other_expense", name: "Other Expense", type: "expense" },
+  { id: "coa_capital", name: "Capital", type: "capital" },
 ];
 
 const journals = [

@@ -7,6 +7,7 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "seed": "node src/scripts/seed-db.js",
+    "test": "node --test",
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:migrate": "drizzle-kit migrate"

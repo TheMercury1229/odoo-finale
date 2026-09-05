@@ -154,7 +154,7 @@ export const journal = pgTable(
   },
   (t) => [
     index("journal_org_idx").on(t.organizationId),
-    uniqueIndex("journal_org_type_uidx").on(t.organizationId, t.type),
+    uniqueIndex("journal_org_name_uidx").on(t.organizationId, t.name),
   ],
 );
 
@@ -174,9 +174,9 @@ export const journalEntry = pgTable(
       .references(() => journal.id, { onDelete: "restrict" }),
     date: date("date").notNull(),
     reference: text("reference"), // e.g. invoice/bill number, human-readable
-    // Polymorphic-ish link back to whatever created this entry (bill/invoice/payment).
-    sourceType: text("source_type").notNull(), // 'vendor_bill' | 'customer_invoice' | 'payment'
-    sourceId: text("source_id").notNull(),
+    // Polymorphic-ish link back to whatever created this entry (bill/invoice/payment/manual).
+    sourceType: text("source_type").notNull(), // 'vendor_bill' | 'customer_invoice' | 'payment' | 'manual'
+    sourceId: text("source_id"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [
@@ -197,6 +197,9 @@ export const journalEntryLine = pgTable(
     accountId: text("account_id")
       .notNull()
       .references(() => chartOfAccounts.id, { onDelete: "restrict" }),
+    contactId: text("contact_id").references(() => contact.id, {
+      onDelete: "set null",
+    }),
     debit: numeric("debit", { precision: 14, scale: 2 }).default("0").notNull(),
     credit: numeric("credit", { precision: 14, scale: 2 })
       .default("0")
@@ -205,6 +208,7 @@ export const journalEntryLine = pgTable(
   (t) => [
     index("jel_entry_idx").on(t.journalEntryId),
     index("jel_account_idx").on(t.accountId), // reports GROUP BY account constantly
+    index("jel_contact_idx").on(t.contactId),
     // A line is either a debit or a credit, never both, never neither.
     check(
       "jel_debit_xor_credit",
@@ -467,6 +471,10 @@ export const journalEntryLineRelations = relations(
     account: one(chartOfAccounts, {
       fields: [journalEntryLine.accountId],
       references: [chartOfAccounts.id],
+    }),
+    contact: one(contact, {
+      fields: [journalEntryLine.contactId],
+      references: [contact.id],
     }),
   }),
 );
