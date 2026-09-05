@@ -4,6 +4,8 @@ import { auth } from "./lib/auth.js";
 import envVars from "./config/env.js";
 import cors from "cors";
 import contactsRouter from "./routes/contacts.route.js";
+import productsRouter from "./routes/products.route.js";
+import chartOfAccountsRouter from "./routes/chart-of-accounts.route.js";
 const port = process.env.PORT || 5000;
 const app = express();
 app.use(
@@ -17,6 +19,8 @@ app.use(
 app.all("/api/auth/{*any}", toNodeHandler(auth));
 app.use(express.json());
 app.use("/api/contacts", contactsRouter);
+app.use("/api/products", productsRouter);
+app.use("/api/chart-of-accounts", chartOfAccountsRouter);
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });

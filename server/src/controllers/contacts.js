@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, ilike, ne, or } from "drizzle-orm";
 import db from "../config/db.js";
-import { contact } from "../db/schema.js";
+import { contact, user } from "../db/schema.js";
 import { auth } from "../lib/auth.js";
 
 const contactTypes = ["customer", "vendor", "both"];
@@ -159,6 +159,43 @@ async function setArchived(req, res, next, isArchived) {
       .where(contactScope(req.organizationId, req.params.id))
       .returning();
     if (!updated) return res.status(404).json({ error: "Contact not found" });
+
+    // When archiving a contact, ban their linked portal user; unban when restoring
+    if (updated.userId) {
+      if (isArchived) {
+        try {
+          await auth.api.banUser({
+            body: {
+              userId: updated.userId,
+              banReason: "Contact archived",
+            },
+            headers: req.headers,
+          });
+        } catch (err) {
+          console.error("Failed to ban linked user via auth.api.banUser:", err);
+          await db
+            .update(user)
+            .set({ banned: true, banReason: "Contact archived" })
+            .where(eq(user.id, updated.userId));
+        }
+      } else {
+        try {
+          await auth.api.unbanUser({
+            body: {
+              userId: updated.userId,
+            },
+            headers: req.headers,
+          });
+        } catch (err) {
+          console.error("Failed to unban linked user via auth.api.unbanUser:", err);
+          await db
+            .update(user)
+            .set({ banned: false, banReason: null, banExpires: null })
+            .where(eq(user.id, updated.userId));
+        }
+      }
+    }
+
     return res.json(updated);
   } catch (error) {
     return next(error);

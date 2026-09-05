@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { ChartOfAccountsView } from "@/components/dashboard/chart-of-accounts/chart-of-accounts-view";
 
 export default function ChartOfAccountsPage() {
-  return <PlaceholderPage title="Chart of Accounts" />;
+  return <ChartOfAccountsView />;
 }

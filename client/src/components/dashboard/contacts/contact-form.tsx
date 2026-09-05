@@ -245,6 +245,9 @@ export function ContactForm({ contact }: ContactFormProps) {
       toast.add({
         type: "success",
         title: contact?.isArchived ? "Contact restored" : "Contact archived",
+        description: contact?.isArchived
+          ? "Contact restored and portal access unbanned."
+          : "Contact archived and portal access banned.",
       });
       router.push("/contacts");
     },
@@ -326,8 +329,8 @@ export function ContactForm({ contact }: ContactFormProps) {
         <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-700 dark:text-amber-300">
           <Archive className="size-4" />
           <span>
-            This contact is currently archived. It will not appear in default
-            selection lists.
+            This contact is currently archived and portal access is banned. It
+            will not appear in default selection lists.
           </span>
         </div>
       ) : null}
@@ -635,8 +638,8 @@ export function ContactForm({ contact }: ContactFormProps) {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {contact?.isArchived
-                ? "This contact will be restored and visible in all transaction forms and contact pickers."
-                : "This contact will be archived and hidden from transaction pickers. All past financial records remain intact."}
+                ? "This contact will be restored and their portal access will be unbanned."
+                : "This contact will be archived, their portal access will be banned, and they will be hidden from transaction pickers. All past financial records remain intact."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

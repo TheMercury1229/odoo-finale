@@ -7,7 +7,7 @@ const statement = {
   ...defaultStatements,
   contact: ["view", "create", "update", "archive", "view_own"],
   product: ["create", "update", "archive"],
-  chartOfAccounts: ["create", "update", "archive"],
+  chartOfAccounts: ["view", "create", "update", "archive"],
   transaction: ["create", "confirm", "record_payment"], // PO/Bill, SO/Invoice
   report: ["view"],
 } as const;
@@ -19,7 +19,7 @@ export const ac = createAccessControl(statement);
 export const adminRole = ac.newRole({
   contact: ["view", "create", "update", "archive"],
   product: ["create", "update", "archive"],
-  chartOfAccounts: ["create", "update", "archive"],
+  chartOfAccounts: ["view", "create", "update", "archive"],
   transaction: ["create", "confirm", "record_payment"],
   report: ["view"],
   member: ["create", "update", "delete"],
@@ -32,7 +32,7 @@ export const adminRole = ac.newRole({
 export const accountantRole = ac.newRole({
   contact: ["view", "create", "update"],
   product: ["create", "update"],
-  chartOfAccounts: ["create", "update"],
+  chartOfAccounts: ["view", "create", "update"],
   transaction: ["create", "confirm", "record_payment"],
   report: ["view"],
 });

@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { ProductsView } from "@/components/dashboard/products/products-view";
 
 export default function ProductsPage() {
-  return <PlaceholderPage title="Products" />;
+  return <ProductsView />;
 }
