@@ -3,11 +3,14 @@ import { requirePermission } from "../middleware/organization-access.js";
 import { validateQuery } from "../middleware/validate-query.js";
 import {
   balanceSheetQuerySchema,
+  budgetReportQuerySchema,
   profitLossQuerySchema,
 } from "../validators/reports.js";
 import {
   getBalanceSheet,
+  getBudgetReport,
   getProfitLoss,
+  getStockReport,
 } from "../controllers/reports.js";
 
 const router = express.Router();
@@ -26,5 +29,14 @@ router.get(
   validateQuery(profitLossQuerySchema),
   getProfitLoss,
 );
+
+router.get(
+  "/budget",
+  canViewReports,
+  validateQuery(budgetReportQuerySchema),
+  getBudgetReport,
+);
+
+router.get("/stock", canViewReports, getStockReport);
 
 export default router;

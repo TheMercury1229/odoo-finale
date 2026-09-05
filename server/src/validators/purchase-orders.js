@@ -6,6 +6,11 @@ export const purchaseOrderLineSchema = z
       .string({ required_error: "productId is required" })
       .trim()
       .min(1, "productId is required"),
+    analyticAccountId: z
+      .string()
+      .trim()
+      .optional()
+      .nullable(),
     quantity: z
       .number({ required_error: "quantity is required" })
       .gt(0, "Quantity must be greater than 0"),

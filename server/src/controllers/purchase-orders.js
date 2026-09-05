@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import db from "../config/db.js";
 import {
+  analyticAccount,
   contact,
   product,
   purchaseOrder,
@@ -169,6 +170,7 @@ export async function createPurchaseOrder(req, res, next) {
         id: `pol_${randomUUID()}`,
         purchaseOrderId: poId,
         productId: line.productId,
+        analyticAccountId: line.analyticAccountId || null,
         quantity: String(line.quantity),
         unitPrice: String(line.unitPrice),
       }));
@@ -325,7 +327,7 @@ export async function getPurchaseOrder(req, res, next) {
       return res.status(404).json({ error: "Purchase order not found" });
     }
 
-    // Fetch lines with product details
+    // Fetch lines with product details and analytic account
     const lineRows = await db
       .select({
         id: purchaseOrderLine.id,
@@ -334,11 +336,14 @@ export async function getPurchaseOrder(req, res, next) {
         productName: product.name,
         productType: product.type,
         productCategory: product.category,
+        analyticAccountId: purchaseOrderLine.analyticAccountId,
+        analyticAccountName: analyticAccount.name,
         quantity: purchaseOrderLine.quantity,
         unitPrice: purchaseOrderLine.unitPrice,
       })
       .from(purchaseOrderLine)
       .leftJoin(product, eq(purchaseOrderLine.productId, product.id))
+      .leftJoin(analyticAccount, eq(purchaseOrderLine.analyticAccountId, analyticAccount.id))
       .where(eq(purchaseOrderLine.purchaseOrderId, po.id))
       .orderBy(asc(purchaseOrderLine.id));
 
@@ -356,6 +361,8 @@ export async function getPurchaseOrder(req, res, next) {
         productName: line.productName || "Unknown Product",
         productType: line.productType || null,
         productCategory: line.productCategory || null,
+        analyticAccountId: line.analyticAccountId || null,
+        analyticAccountName: line.analyticAccountName || null,
         quantity: qty,
         unitPrice: price,
         subtotal,
@@ -479,6 +486,7 @@ export async function updatePurchaseOrder(req, res, next) {
           id: `pol_${randomUUID()}`,
           purchaseOrderId: existing.id,
           productId: l.productId,
+          analyticAccountId: l.analyticAccountId || null,
           quantity: String(l.quantity),
           unitPrice: String(l.unitPrice),
         }));

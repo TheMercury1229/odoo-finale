@@ -24,6 +24,7 @@ import {
   fetchProducts,
   type Product,
 } from "@/components/dashboard/products/products-api";
+import { fetchAnalyticAccounts } from "@/components/dashboard/analytic-accounts/analytic-accounts-api";
 import {
   createSalesOrder,
   updateSalesOrder,
@@ -65,6 +66,7 @@ import {
 
 const lineSchema = z.object({
   productId: z.string().min(1, "Product selection is required"),
+  analyticAccountId: z.string().optional().nullable(),
   quantity: z.coerce.number().min(0.01, "Quantity must be greater than 0"),
   unitPrice: z.coerce.number().min(0, "Unit price cannot be negative"),
   taxAmount: z.coerce.number().min(0, "Tax amount cannot be negative").default(0),
@@ -117,12 +119,13 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
     if (initialSo?.lines && initialSo.lines.length > 0) {
       return initialSo.lines.map((l) => ({
         productId: l.productId,
+        analyticAccountId: l.analyticAccountId || null,
         quantity: Number(l.quantity),
         unitPrice: Number(l.unitPrice),
         taxAmount: Number(l.taxAmount || 0),
       }));
     }
-    return [{ productId: "", quantity: 1, unitPrice: 0, taxAmount: 0 }];
+    return [{ productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0, taxAmount: 0 }];
   }, [initialSo]);
 
   const {
@@ -163,6 +166,16 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
           c.id === initialSo?.customerId),
     );
   }, [contacts, initialSo?.customerId]);
+
+  // Query Analytic Accounts (income)
+  const { data: analyticAccounts = [] } = useQuery({
+    queryKey: ["analytic-accounts", "active"],
+    queryFn: () => fetchAnalyticAccounts({ includeArchived: false }),
+  });
+
+  const incomeAnalytics = useMemo(() => {
+    return analyticAccounts.filter((a) => a.type === "income");
+  }, [analyticAccounts]);
 
   // Products query
   const { data: productsResult, isLoading: isLoadingProducts } = useQuery({
@@ -314,6 +327,7 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
         orderDate: data.orderDate,
         lines: data.lines.map((l) => ({
           productId: l.productId,
+          analyticAccountId: l.analyticAccountId,
           quantity: Number(l.quantity),
           unitPrice: Number(l.unitPrice),
           taxAmount: Number(l.taxAmount || 0),
@@ -619,6 +633,7 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                     onClick={() =>
                       append({
                         productId: "",
+                        analyticAccountId: null,
                         quantity: 1,
                         unitPrice: 0,
                         taxAmount: 0,
@@ -636,11 +651,14 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
                       <TableHead className="w-12 text-center">#</TableHead>
-                      <TableHead className="min-w-48 font-semibold">
-                        Product
+                      <TableHead className="min-w-52 font-semibold">
+                        Product {!isReadOnly && <span className="text-destructive">*</span>}
+                      </TableHead>
+                      <TableHead className="min-w-44 font-semibold">
+                        Analytic Account
                       </TableHead>
                       <TableHead className="w-24 text-right font-semibold">
-                        Qty
+                        Qty {!isReadOnly && <span className="text-destructive">*</span>}
                       </TableHead>
                       <TableHead className="w-32 text-right font-semibold">
                         Unit Price
@@ -708,6 +726,40 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                               <p className="text-[11px] text-destructive mt-1 font-medium">
                                 {errors.lines[index]?.productId?.message}
                               </p>
+                            )}
+                          </TableCell>
+
+                          {/* Analytic Account */}
+                          <TableCell className="pt-2">
+                            {isReadOnly ? (
+                              <div className="text-sm font-medium text-muted-foreground py-2">
+                                {initialSo?.lines?.[index]?.analyticAccountName || "—"}
+                              </div>
+                            ) : (
+                              <Controller
+                                control={control}
+                                name={`lines.${index}.analyticAccountId`}
+                                render={({ field }) => (
+                                  <Select
+                                    value={field.value || "none"}
+                                    onValueChange={(val) =>
+                                      field.onChange(val === "none" ? null : val)
+                                    }
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="None" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">None</SelectItem>
+                                      {incomeAnalytics.map((a) => (
+                                        <SelectItem key={a.id} value={a.id}>
+                                          {a.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
                             )}
                           </TableCell>
 

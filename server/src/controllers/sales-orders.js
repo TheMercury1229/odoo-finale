@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import db from "../config/db.js";
 import {
+  analyticAccount,
   contact,
   customerInvoice,
   product,
@@ -168,6 +169,7 @@ export async function createSalesOrder(req, res, next) {
         id: `sol_${randomUUID()}`,
         salesOrderId: soId,
         productId: line.productId,
+        analyticAccountId: line.analyticAccountId || null,
         quantity: String(line.quantity),
         unitPrice: String(line.unitPrice),
         taxAmount: String(Number(line.taxAmount || 0)),
@@ -337,7 +339,7 @@ export async function getSalesOrder(req, res, next) {
       return res.status(404).json({ error: "Sales order not found" });
     }
 
-    // Fetch lines with product details
+    // Fetch lines with product details and analytic account
     const lineRows = await db
       .select({
         id: salesOrderLine.id,
@@ -346,12 +348,15 @@ export async function getSalesOrder(req, res, next) {
         productName: product.name,
         productType: product.type,
         productCategory: product.category,
+        analyticAccountId: salesOrderLine.analyticAccountId,
+        analyticAccountName: analyticAccount.name,
         quantity: salesOrderLine.quantity,
         unitPrice: salesOrderLine.unitPrice,
         taxAmount: salesOrderLine.taxAmount,
       })
       .from(salesOrderLine)
       .leftJoin(product, eq(salesOrderLine.productId, product.id))
+      .leftJoin(analyticAccount, eq(salesOrderLine.analyticAccountId, analyticAccount.id))
       .where(eq(salesOrderLine.salesOrderId, so.id))
       .orderBy(asc(salesOrderLine.id));
 
@@ -375,6 +380,8 @@ export async function getSalesOrder(req, res, next) {
         productName: line.productName || "Unknown Product",
         productType: line.productType || null,
         productCategory: line.productCategory || null,
+        analyticAccountId: line.analyticAccountId || null,
+        analyticAccountName: line.analyticAccountName || null,
         quantity: qty,
         unitPrice: price,
         taxAmount: tax,
@@ -500,6 +507,7 @@ export async function updateSalesOrder(req, res, next) {
           id: `sol_${randomUUID()}`,
           salesOrderId: existing.id,
           productId: l.productId,
+          analyticAccountId: l.analyticAccountId || null,
           quantity: String(l.quantity),
           unitPrice: String(l.unitPrice),
           taxAmount: String(Number(l.taxAmount || 0)),

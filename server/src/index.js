@@ -15,6 +15,8 @@ import salesOrdersRouter from "./routes/sales-orders.route.js";
 import customerInvoicesRouter from "./routes/customer-invoices.route.js";
 import reportsRouter from "./routes/reports.route.js";
 import portalRouter from "./routes/portal.route.js";
+import analyticAccountsRouter from "./routes/analytic-accounts.route.js";
+import budgetsRouter from "./routes/budgets.route.js";
 const port = process.env.PORT || 5000;
 const app = express();
 app.use(
@@ -30,6 +32,8 @@ app.use(express.json());
 app.use("/api/contacts", contactsRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/chart-of-accounts", chartOfAccountsRouter);
+app.use("/api/analytic-accounts", analyticAccountsRouter);
+app.use("/api/budgets", budgetsRouter);
 app.use("/api/journals", journalsRouter);
 app.use("/api/journal-entries", journalEntriesRouter);
 app.use("/api/purchase-orders", purchaseOrdersRouter);

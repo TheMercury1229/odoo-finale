@@ -72,6 +72,7 @@ export const contact = pgTable(
     addressState: text("address_state"),
     addressPincode: text("address_pincode"),
     profileImageUrl: text("profile_image_url"),
+
     isArchived: boolean("is_archived").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -159,6 +160,72 @@ export const journal = pgTable(
 );
 
 /* -------------------------------------------------------------------------- */
+/* ANALYTICS & BUDGETING                                                      */
+/* -------------------------------------------------------------------------- */
+
+export const analyticTypeEnum = pgEnum("analytic_type", ["income", "expense"]);
+
+export const analyticAccount = pgTable(
+  "analytic_account",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    type: analyticTypeEnum("type").notNull(),
+    isArchived: boolean("is_archived").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("analytic_org_idx").on(t.organizationId),
+    uniqueIndex("analytic_org_name_uidx").on(t.organizationId, t.name),
+  ],
+);
+
+export const budgetStatusEnum = pgEnum("budget_status", [
+  "draft",
+  "confirmed",
+  "revised",
+  "cancelled",
+]);
+
+export const budget = pgTable(
+  "budget",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // e.g. "January 2026", revision appends " Revised"
+    periodStart: date("period_start").notNull(),
+    periodEnd: date("period_end").notNull(),
+    responsibleContactId: text("responsible_contact_id")
+      .notNull()
+      .references(() => contact.id, { onDelete: "restrict" }), // NOTE: contact, not user
+    analyticAccountId: text("analytic_account_id")
+      .notNull()
+      .references(() => analyticAccount.id, { onDelete: "restrict" }),
+    committedAmount: numeric("committed_amount", { precision: 14, scale: 2 }).notNull(),
+    status: budgetStatusEnum("status").default("draft").notNull(),
+    // Self-referential: set when this row is a revision of another budget.
+    revisionOfId: text("revision_of_id").references(() => budget.id, {
+      onDelete: "set null",
+    }),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("budget_org_idx").on(t.organizationId),
+    index("budget_analytic_idx").on(t.analyticAccountId),
+    index("budget_status_idx").on(t.status),
+    index("budget_revision_idx").on(t.revisionOfId),
+  ],
+);
+
+/* -------------------------------------------------------------------------- */
 /* DOUBLE-ENTRY CORE                                                           */
 /* -------------------------------------------------------------------------- */
 
@@ -200,6 +267,10 @@ export const journalEntryLine = pgTable(
     contactId: text("contact_id").references(() => contact.id, {
       onDelete: "set null",
     }),
+    analyticAccountId: text("analytic_account_id").references(
+      () => analyticAccount.id,
+      { onDelete: "set null" },
+    ),
     debit: numeric("debit", { precision: 14, scale: 2 }).default("0").notNull(),
     credit: numeric("credit", { precision: 14, scale: 2 })
       .default("0")
@@ -209,6 +280,7 @@ export const journalEntryLine = pgTable(
     index("jel_entry_idx").on(t.journalEntryId),
     index("jel_account_idx").on(t.accountId), // reports GROUP BY account constantly
     index("jel_contact_idx").on(t.contactId),
+    index("jel_analytic_idx").on(t.analyticAccountId),
     // A line is either a debit or a credit, never both, never neither.
     check(
       "jel_debit_xor_credit",
@@ -257,10 +329,17 @@ export const purchaseOrderLine = pgTable(
     productId: text("product_id")
       .notNull()
       .references(() => product.id, { onDelete: "restrict" }),
+    analyticAccountId: text("analytic_account_id").references(
+      () => analyticAccount.id,
+      { onDelete: "set null" },
+    ),
     quantity: numeric("quantity", { precision: 12, scale: 2 }).notNull(),
     unitPrice: numeric("unit_price", { precision: 14, scale: 2 }).notNull(),
   },
-  (t) => [index("pol_po_idx").on(t.purchaseOrderId)],
+  (t) => [
+    index("pol_po_idx").on(t.purchaseOrderId),
+    index("pol_analytic_idx").on(t.analyticAccountId),
+  ],
 );
 
 export const vendorBill = pgTable(
@@ -338,13 +417,20 @@ export const salesOrderLine = pgTable(
     productId: text("product_id")
       .notNull()
       .references(() => product.id, { onDelete: "restrict" }),
+    analyticAccountId: text("analytic_account_id").references(
+      () => analyticAccount.id,
+      { onDelete: "set null" },
+    ),
     quantity: numeric("quantity", { precision: 12, scale: 2 }).notNull(),
     unitPrice: numeric("unit_price", { precision: 14, scale: 2 }).notNull(),
     taxAmount: numeric("tax_amount", { precision: 14, scale: 2 })
       .default("0")
       .notNull(),
   },
-  (t) => [index("sol_so_idx").on(t.salesOrderId)],
+  (t) => [
+    index("sol_so_idx").on(t.salesOrderId),
+    index("sol_analytic_idx").on(t.analyticAccountId),
+  ],
 );
 
 export const customerInvoice = pgTable(
@@ -485,8 +571,45 @@ export const journalEntryLineRelations = relations(
       fields: [journalEntryLine.contactId],
       references: [contact.id],
     }),
+    analyticAccount: one(analyticAccount, {
+      fields: [journalEntryLine.analyticAccountId],
+      references: [analyticAccount.id],
+    }),
   }),
 );
+
+export const analyticAccountRelations = relations(
+  analyticAccount,
+  ({ many }) => ({
+    budgets: many(budget),
+    journalEntryLines: many(journalEntryLine),
+    purchaseOrderLines: many(purchaseOrderLine),
+    salesOrderLines: many(salesOrderLine),
+  }),
+);
+
+export const budgetRelations = relations(budget, ({ one, many }) => ({
+  responsibleContact: one(contact, {
+    fields: [budget.responsibleContactId],
+    references: [contact.id],
+  }),
+  analyticAccount: one(analyticAccount, {
+    fields: [budget.analyticAccountId],
+    references: [analyticAccount.id],
+  }),
+  revisionOf: one(budget, {
+    fields: [budget.revisionOfId],
+    references: [budget.id],
+    relationName: "budget_revisions",
+  }),
+  revisions: many(budget, {
+    relationName: "budget_revisions",
+  }),
+  createdByUser: one(user, {
+    fields: [budget.createdBy],
+    references: [user.id],
+  }),
+}));
 
 export const purchaseOrderRelations = relations(
   purchaseOrder,
@@ -513,6 +636,10 @@ export const purchaseOrderLineRelations = relations(
     product: one(product, {
       fields: [purchaseOrderLine.productId],
       references: [product.id],
+    }),
+    analyticAccount: one(analyticAccount, {
+      fields: [purchaseOrderLine.analyticAccountId],
+      references: [analyticAccount.id],
     }),
   }),
 );
@@ -553,6 +680,10 @@ export const salesOrderLineRelations = relations(salesOrderLine, ({ one }) => ({
   product: one(product, {
     fields: [salesOrderLine.productId],
     references: [product.id],
+  }),
+  analyticAccount: one(analyticAccount, {
+    fields: [salesOrderLine.analyticAccountId],
+    references: [analyticAccount.id],
   }),
 }));
 

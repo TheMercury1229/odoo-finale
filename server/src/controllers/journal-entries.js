@@ -11,7 +11,7 @@ import { postJournalEntry } from "../services/accounting/postJournalEntry.js";
 
 export async function createJournalEntry(req, res, next) {
   try {
-    const { date, journalId, lines } = req.validatedBody;
+    const { date, journalId, reference, lines } = req.validatedBody;
 
     let createdResult;
     try {
@@ -21,7 +21,7 @@ export async function createJournalEntry(req, res, next) {
             organizationId: req.organizationId,
             journalId,
             date,
-            reference: null,
+            reference: reference || null,
             sourceType: "manual",
             sourceId: null,
             lines,

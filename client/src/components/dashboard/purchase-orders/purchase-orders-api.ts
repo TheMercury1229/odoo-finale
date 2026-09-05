@@ -9,6 +9,8 @@ export interface PurchaseOrderLineItem {
   productName?: string | null;
   productType?: string | null;
   productCategory?: string | null;
+  analyticAccountId?: string | null;
+  analyticAccountName?: string | null;
   quantity: number;
   unitPrice: number;
   subtotal?: number;
@@ -47,6 +49,7 @@ export interface CreatePurchaseOrderPayload {
     productId: string;
     quantity: number;
     unitPrice: number;
+    analyticAccountId?: string | null;
   }>;
 }
 
@@ -57,6 +60,7 @@ export interface UpdatePurchaseOrderPayload {
     productId: string;
     quantity: number;
     unitPrice: number;
+    analyticAccountId?: string | null;
   }>;
 }
 

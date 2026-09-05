@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth";
-import { fetchBalanceSheet, fetchProfitLoss } from "./reports-api";
+import {
+  fetchBalanceSheet,
+  fetchBudgetReport,
+  fetchProfitLoss,
+  fetchStockReport,
+} from "./reports-api";
 
 export function useBalanceSheet(params?: { asOf?: string }) {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
@@ -26,6 +31,28 @@ export function useProfitLoss(params?: { from?: string; to?: string }) {
       params?.to,
     ],
     queryFn: () => fetchProfitLoss(params),
+    enabled: !isSessionPending && Boolean(organizationId),
+  });
+}
+
+export function useBudgetReport(params?: { asOf?: string }) {
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const organizationId = session?.session.activeOrganizationId;
+
+  return useQuery({
+    queryKey: ["reports", "budget", organizationId, params?.asOf],
+    queryFn: () => fetchBudgetReport(params),
+    enabled: !isSessionPending && Boolean(organizationId),
+  });
+}
+
+export function useStockReport() {
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const organizationId = session?.session.activeOrganizationId;
+
+  return useQuery({
+    queryKey: ["reports", "stock", organizationId],
+    queryFn: () => fetchStockReport(),
     enabled: !isSessionPending && Boolean(organizationId),
   });
 }

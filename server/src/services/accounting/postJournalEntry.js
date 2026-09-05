@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import db from "../../config/db.js";
 import {
+  analyticAccount,
   chartOfAccounts,
   contact,
   journal,
@@ -26,7 +27,7 @@ const VALID_SOURCE_TYPES = new Set([
  * @param {string | null} [params.reference]
  * @param {'vendor_bill' | 'customer_invoice' | 'payment' | 'manual'} params.sourceType
  * @param {string | null} [params.sourceId] - null only when sourceType === 'manual'
- * @param {Array<{ accountId: string, contactId?: string | null, debit: number, credit: number }>} params.lines
+ * @param {Array<{ accountId: string, contactId?: string | null, analyticAccountId?: string | null, debit: number, credit: number }>} params.lines
  * @param {any} [tx] - Optional existing Drizzle transaction
  * @returns {Promise<{ journalEntryId: string }>}
  */
@@ -149,6 +150,12 @@ export async function postJournalEntry(
         line.contactId.trim()
           ? line.contactId.trim()
           : null,
+      analyticAccountId:
+        line.analyticAccountId &&
+        typeof line.analyticAccountId === "string" &&
+        line.analyticAccountId.trim()
+          ? line.analyticAccountId.trim()
+          : null,
       debit: (lineDebitCents / 100).toFixed(2),
       credit: (lineCreditCents / 100).toFixed(2),
     });
@@ -238,6 +245,42 @@ export async function postJournalEntry(
     }
   }
 
+  // Validate Analytic Accounts (if any line has an analyticAccountId)
+  const uniqueAnalyticAccountIds = [
+    ...new Set(
+      validatedLines
+        .map((l) => l.analyticAccountId)
+        .filter(Boolean),
+    ),
+  ];
+
+  if (uniqueAnalyticAccountIds.length > 0) {
+    const analyticRows = await executor
+      .select({ id: analyticAccount.id, isArchived: analyticAccount.isArchived })
+      .from(analyticAccount)
+      .where(
+        and(
+          eq(analyticAccount.organizationId, organizationId),
+          inArray(analyticAccount.id, uniqueAnalyticAccountIds),
+        ),
+      );
+
+    const foundAnalyticMap = new Map(analyticRows.map((a) => [a.id, a]));
+    for (const anId of uniqueAnalyticAccountIds) {
+      const found = foundAnalyticMap.get(anId);
+      if (!found) {
+        throw new Error(
+          `Analytic account '${anId}' not found for organization '${organizationId}'`,
+        );
+      }
+      if (found.isArchived) {
+        throw new Error(
+          `Analytic account '${anId}' is archived and cannot be used`,
+        );
+      }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // 4. Atomic Database Inserts
   // ---------------------------------------------------------------------------
@@ -259,6 +302,7 @@ export async function postJournalEntry(
       journalEntryId,
       accountId: l.accountId,
       contactId: l.contactId,
+      analyticAccountId: l.analyticAccountId,
       debit: l.debit,
       credit: l.credit,
     }));

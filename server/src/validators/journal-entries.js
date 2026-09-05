@@ -12,6 +12,12 @@ const journalEntryLineSchema = z
       .nullable()
       .optional()
       .transform((val) => (val === "" || val === undefined ? null : val)),
+    analyticAccountId: z
+      .string()
+      .trim()
+      .nullable()
+      .optional()
+      .transform((val) => (val === "" || val === undefined ? null : val)),
     debit: z
       .number({ required_error: "debit is required" })
       .min(0, "Debit must be greater than or equal to 0"),
@@ -32,6 +38,12 @@ export const createJournalEntrySchema = z
       .string({ required_error: "journalId is required" })
       .trim()
       .min(1, "journalId is required"),
+    reference: z
+      .string()
+      .trim()
+      .nullable()
+      .optional()
+      .transform((val) => (val === "" || val === undefined ? null : val)),
     lines: z
       .array(journalEntryLineSchema, { required_error: "lines is required" })
       .min(2, "Journal entry must have at least 2 lines"),

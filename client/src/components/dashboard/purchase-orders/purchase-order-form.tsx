@@ -21,6 +21,7 @@ import {
 import { authClient } from "@/lib/auth";
 import { fetchContacts } from "@/components/dashboard/contacts/contacts-api";
 import { fetchProducts, type Product } from "@/components/dashboard/products/products-api";
+import { fetchAnalyticAccounts } from "@/components/dashboard/analytic-accounts/analytic-accounts-api";
 import {
   createPurchaseOrder,
   updatePurchaseOrder,
@@ -63,6 +64,7 @@ import { cn } from "@/lib/utils";
 
 const lineSchema = z.object({
   productId: z.string().min(1, "Product selection is required"),
+  analyticAccountId: z.string().optional().nullable(),
   quantity: z.coerce.number().min(0.01, "Quantity must be greater than 0"),
   unitPrice: z.coerce.number().min(0, "Unit price cannot be negative"),
 });
@@ -135,11 +137,12 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
     if (initialPo?.lines && initialPo.lines.length > 0) {
       return initialPo.lines.map((l) => ({
         productId: l.productId,
+        analyticAccountId: l.analyticAccountId || null,
         quantity: Number(l.quantity),
         unitPrice: Number(l.unitPrice),
       }));
     }
-    return [{ productId: "", quantity: 1, unitPrice: 0 }];
+    return [{ productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 }];
   }, [initialPo]);
 
   const {
@@ -193,6 +196,16 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
     return products.filter((p) => !p.isArchived);
   }, [products]);
 
+  // Query Analytic Accounts (expense)
+  const { data: analyticAccounts = [] } = useQuery({
+    queryKey: ["analytic-accounts", "active"],
+    queryFn: () => fetchAnalyticAccounts({ includeArchived: false }),
+  });
+
+  const expenseAnalytics = useMemo(() => {
+    return analyticAccounts.filter((a) => a.type === "expense");
+  }, [analyticAccounts]);
+
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
     products.forEach((p) => map.set(p.id, p));
@@ -241,7 +254,7 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
       reset({
         vendorId: "",
         orderDate: today,
-        lines: [{ productId: "", quantity: 1, unitPrice: 0 }],
+        lines: [{ productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 }],
       });
       setApiError(null);
     }
@@ -578,7 +591,7 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    append({ productId: "", quantity: 1, unitPrice: 0 })
+                    append({ productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 })
                   }
                   className="h-8 text-xs font-medium"
                 >
@@ -601,10 +614,13 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                     <TableHead className="w-16 text-center font-semibold">
                       Sr. No.
                     </TableHead>
-                    <TableHead className="min-w-64 font-semibold">
+                    <TableHead className="min-w-56 font-semibold">
                       Product {!isReadOnly && <span className="text-destructive">*</span>}
                     </TableHead>
-                    <TableHead className="w-32 font-semibold">
+                    <TableHead className="min-w-44 font-semibold">
+                      Analytic Account
+                    </TableHead>
+                    <TableHead className="w-28 font-semibold">
                       Qty {!isReadOnly && <span className="text-destructive">*</span>}
                     </TableHead>
                     <TableHead className="w-40 font-semibold">
@@ -685,6 +701,40 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                                 </p>
                               )}
                             </div>
+                          )}
+                        </TableCell>
+
+                        {/* Analytic Account */}
+                        <TableCell>
+                          {isReadOnly ? (
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {initialPo?.lines?.[index]?.analyticAccountName || "—"}
+                            </span>
+                          ) : (
+                            <Controller
+                              control={control}
+                              name={`lines.${index}.analyticAccountId`}
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value || "none"}
+                                  onValueChange={(val) =>
+                                    field.onChange(val === "none" ? null : val)
+                                  }
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="None" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {expenseAnalytics.map((a) => (
+                                      <SelectItem key={a.id} value={a.id}>
+                                        {a.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
                           )}
                         </TableCell>
 

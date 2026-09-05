@@ -1,6 +1,20 @@
 import { and, asc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import db from "../config/db.js";
-import { chartOfAccounts, journalEntry, journalEntryLine } from "../db/schema.js";
+import {
+  analyticAccount,
+  budget,
+  chartOfAccounts,
+  contact,
+  journalEntry,
+  journalEntryLine,
+  product,
+  purchaseOrder,
+  purchaseOrderLine,
+  salesOrder,
+  salesOrderLine,
+  user,
+} from "../db/schema.js";
+import { fetchAchievedItems } from "./budgets.js";
 
 const CORE_SEEDED_ACCOUNT_IDS = new Set([
   "coa_bank",
@@ -271,6 +285,197 @@ export async function getProfitLoss(req, res, next) {
       expenses,
       totalExpenses,
       netProfit,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+/**
+ * GET /api/reports/budget?asOf=YYYY-MM-DD
+ */
+export async function getBudgetReport(req, res, next) {
+  try {
+    const organizationId = req.organizationId;
+    const asOf = req.validatedQuery?.asOf || getTodayDateString();
+
+    const budgets = await db
+      .select({
+        id: budget.id,
+        name: budget.name,
+        periodStart: budget.periodStart,
+        periodEnd: budget.periodEnd,
+        committedAmount: budget.committedAmount,
+        status: budget.status,
+        responsibleContactName: contact.name,
+        analyticAccountId: budget.analyticAccountId,
+        analyticAccountName: analyticAccount.name,
+        analyticAccountType: analyticAccount.type,
+      })
+      .from(budget)
+      .leftJoin(contact, eq(budget.responsibleContactId, contact.id))
+      .leftJoin(analyticAccount, eq(budget.analyticAccountId, analyticAccount.id))
+      .where(eq(budget.organizationId, organizationId))
+      .orderBy(asc(budget.periodStart), asc(budget.name));
+
+    const report = await Promise.all(
+      budgets.map(async (b) => {
+        const effectiveEnd = asOf < b.periodEnd ? asOf : b.periodEnd;
+        let actualAmount = 0;
+
+        if (effectiveEnd >= b.periodStart && (b.status === "confirmed" || b.status === "revised")) {
+          const { items } = await fetchAchievedItems(
+            organizationId,
+            b.analyticAccountId,
+            b.analyticAccountType,
+            b.periodStart,
+            effectiveEnd,
+          );
+          actualAmount = round2(items.reduce((acc, it) => acc + it.amount, 0));
+        }
+
+        const committedAmount = round2(Number(b.committedAmount || 0));
+        const variance = round2(committedAmount - actualAmount);
+        const percentUsed =
+          committedAmount > 0 ? round2((actualAmount / committedAmount) * 100) : 0;
+
+        return {
+          budgetId: b.id,
+          budgetName: b.name,
+          status: b.status,
+          analyticAccountName: b.analyticAccountName || "Unknown",
+          periodStart: b.periodStart,
+          periodEnd: b.periodEnd,
+          responsiblePersonName: b.responsibleContactName || "Unknown",
+          plannedAmount: committedAmount,
+          committedAmount,
+          actualAmount,
+          variance,
+          percentUsed,
+        };
+      }),
+    );
+
+    return res.json(report);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+/**
+ * GET /api/reports/stock
+ * Returns inventory stock and valuation report for Goods products
+ */
+export async function getStockReport(req, res, next) {
+  try {
+    const organizationId = req.organizationId;
+
+    // 1. Fetch all goods products
+    const products = await db
+      .select()
+      .from(product)
+      .where(
+        and(
+          eq(product.organizationId, organizationId),
+          eq(product.type, "goods"),
+          eq(product.isArchived, false),
+        ),
+      )
+      .orderBy(asc(product.name));
+
+    if (products.length === 0) {
+      return res.json({
+        products: [],
+        totalItems: 0,
+        totalStockUnits: 0,
+        totalValuation: 0,
+      });
+    }
+
+    // 2. Aggregate purchased quantities from confirmed purchase orders
+    const purchaseSub = await db
+      .select({
+        productId: purchaseOrderLine.productId,
+        purchasedQty: sql`coalesce(sum(${purchaseOrderLine.quantity}), 0)::numeric`.as("purchased_qty"),
+      })
+      .from(purchaseOrderLine)
+      .innerJoin(
+        purchaseOrder,
+        eq(purchaseOrderLine.purchaseOrderId, purchaseOrder.id),
+      )
+      .where(
+        and(
+          eq(purchaseOrder.organizationId, organizationId),
+          eq(purchaseOrder.status, "confirmed"),
+        ),
+      )
+      .groupBy(purchaseOrderLine.productId);
+
+    const purchaseMap = new Map(
+      purchaseSub.map((r) => [r.productId, Number(r.purchasedQty)]),
+    );
+
+    // 3. Aggregate sold quantities from confirmed sales orders
+    const salesSub = await db
+      .select({
+        productId: salesOrderLine.productId,
+        soldQty: sql`coalesce(sum(${salesOrderLine.quantity}), 0)::numeric`.as("sold_qty"),
+      })
+      .from(salesOrderLine)
+      .innerJoin(salesOrder, eq(salesOrderLine.salesOrderId, salesOrder.id))
+      .where(
+        and(
+          eq(salesOrder.organizationId, organizationId),
+          eq(salesOrder.status, "confirmed"),
+        ),
+      )
+      .groupBy(salesOrderLine.productId);
+
+    const salesMap = new Map(
+      salesSub.map((r) => [r.productId, Number(r.soldQty)]),
+    );
+
+    let totalStockUnits = 0;
+    let totalValuation = 0;
+
+    const reportItems = products.map((p) => {
+      const purchasedQty = round2(purchaseMap.get(p.id) || 0);
+      const soldQty = round2(salesMap.get(p.id) || 0);
+      const currentStock = round2(purchasedQty - soldQty);
+      const costPrice = round2(Number(p.costPrice || 0));
+      const salesPrice = round2(Number(p.salesPrice || 0));
+      const valuation = round2(Math.max(0, currentStock) * costPrice);
+
+      totalStockUnits += currentStock;
+      totalValuation += valuation;
+
+      let status = "In Stock";
+      if (currentStock <= 0) {
+        status = "Out of Stock";
+      } else if (currentStock < 10) {
+        status = "Low Stock";
+      }
+
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category || "Uncategorized",
+        type: p.type,
+        costPrice,
+        salesPrice,
+        purchasedQty,
+        soldQty,
+        currentStock,
+        valuation,
+        status,
+      };
+    });
+
+    return res.json({
+      products: reportItems,
+      totalItems: reportItems.length,
+      totalStockUnits: round2(totalStockUnits),
+      totalValuation: round2(totalValuation),
     });
   } catch (error) {
     return next(error);

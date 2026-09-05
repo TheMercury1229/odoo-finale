@@ -10,6 +10,8 @@ const statement = {
   contact: ["view", "create", "update", "archive", "view_own"],
   product: ["create", "update", "archive"],
   chartOfAccounts: ["view", "create", "update", "archive"],
+  analyticAccount: ["view", "create", "update", "archive"],
+  budget: ["view", "create", "update"],
   journal: ["view", "create"],
   transaction: [
     "view",
@@ -43,6 +45,8 @@ export const adminRole = ac.newRole({
   contact: ["view", "create", "update", "archive"],
   product: ["create", "update", "archive"],
   chartOfAccounts: ["view", "create", "update", "archive"],
+  analyticAccount: ["view", "create", "update", "archive"],
+  budget: ["view", "create", "update"],
   journal: ["view", "create"],
   transaction: [
     "view",
@@ -64,6 +68,8 @@ export const accountantRole = ac.newRole({
   contact: ["view", "create", "update"],
   product: ["create", "update"],
   chartOfAccounts: ["view", "create", "update"],
+  analyticAccount: ["view", "create", "update"],
+  budget: ["view", "create", "update"],
   journal: ["view", "create"],
   transaction: [
     "view",

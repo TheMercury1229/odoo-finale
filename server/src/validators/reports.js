@@ -47,3 +47,12 @@ export const profitLossQuerySchema = z
       path: ["from"],
     },
   );
+
+export const budgetReportQuerySchema = z
+  .object({
+    asOf: z
+      .string()
+      .trim()
+      .refine(isValidCalendarDate, "asOf must be a valid date in YYYY-MM-DD format")
+      .optional(),
+  });

@@ -9,6 +9,8 @@ export interface SalesOrderLineItem {
   productName?: string | null;
   productType?: string | null;
   productCategory?: string | null;
+  analyticAccountId?: string | null;
+  analyticAccountName?: string | null;
   quantity: number;
   unitPrice: number;
   taxAmount: number;
@@ -56,6 +58,7 @@ export interface CreateSalesOrderPayload {
     quantity: number;
     unitPrice: number;
     taxAmount?: number;
+    analyticAccountId?: string | null;
   }>;
 }
 
@@ -67,6 +70,7 @@ export interface UpdateSalesOrderPayload {
     quantity: number;
     unitPrice: number;
     taxAmount?: number;
+    analyticAccountId?: string | null;
   }>;
 }
 

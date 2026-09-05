@@ -29,6 +29,7 @@ export interface JournalEntry {
 export interface CreateJournalEntryPayload {
   date: string; // YYYY-MM-DD
   journalId: string;
+  reference?: string | null;
   lines: Array<{
     accountId: string;
     contactId?: string | null;

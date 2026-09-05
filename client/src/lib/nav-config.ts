@@ -21,6 +21,11 @@ export const dashboardNav: NavSection[] = [
         icon: "BookOpen",
       },
       {
+        title: "Analytic Accounts",
+        url: "/analytic-accounts",
+        icon: "Tags",
+      },
+      {
         title: "Journals",
         url: "/journals",
         icon: "BookText",
@@ -55,6 +60,10 @@ export const dashboardNav: NavSection[] = [
     ],
   },
   {
+    title: "Budgeting",
+    items: [{ title: "Budgets", url: "/budgets", icon: "PiggyBank" }],
+  },
+  {
     title: "Reports",
     items: [
       { title: "Balance Sheet", url: "/reports/balance-sheet", icon: "Scale" },
@@ -62,6 +71,16 @@ export const dashboardNav: NavSection[] = [
         title: "Profit & Loss",
         url: "/reports/profit-loss",
         icon: "TrendingUp",
+      },
+      {
+        title: "Budget Report",
+        url: "/reports/budget",
+        icon: "Target",
+      },
+      {
+        title: "Stock Report",
+        url: "/reports/stock",
+        icon: "Boxes",
       },
     ],
   },

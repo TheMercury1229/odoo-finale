@@ -60,6 +60,7 @@ const createJournalEntrySchema = z.object({
     .min(1, "Accounting date is required")
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   journalId: z.string().min(1, "Journal selection is required"),
+  reference: z.string().optional(),
   lines: z
     .array(lineSchema)
     .min(2, "Journal entry must have at least 2 lines"),
@@ -88,6 +89,7 @@ export function JournalEntryCreateForm() {
     defaultValues: {
       date: today,
       journalId: "",
+      reference: "",
       lines: [
         { accountId: "", contactId: null, debit: 0, credit: 0 },
         { accountId: "", contactId: null, debit: 0, credit: 0 },
@@ -155,6 +157,7 @@ export function JournalEntryCreateForm() {
       await createJournalEntry({
         date: data.date,
         journalId: data.journalId,
+        reference: data.reference?.trim() || null,
         lines: data.lines.map((l) => ({
           accountId: l.accountId,
           contactId: l.contactId || null,
@@ -214,19 +217,16 @@ export function JournalEntryCreateForm() {
         </div>
       </div>
 
-      {/* ─── Inline API Error Alert ─── */}
+      {/* ─── API Error Banner ─── */}
       {apiError && (
-        <div className="flex items-start justify-between gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive text-sm font-medium">
-          <div className="flex items-start gap-2.5">
-            <AlertCircle className="size-5 shrink-0 mt-0.5" />
-            <span>{apiError}</span>
-          </div>
+        <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive font-medium shadow-xs">
+          <span>{apiError}</span>
           <button
             type="button"
             onClick={() => setApiError(null)}
-            className="text-destructive/70 hover:text-destructive"
+            className="text-xs underline hover:no-underline font-semibold"
           >
-            <X className="size-4" />
+            Dismiss
           </button>
         </div>
       )}
@@ -235,8 +235,8 @@ export function JournalEntryCreateForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <Card className="border border-border/80 shadow-xs">
           <CardContent className="p-6 flex flex-col gap-6">
-            {/* ─── Header Fields: Accounting Date & Journal (per mockup) ─── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-2 border-b border-border/60">
+            {/* ─── Header Fields: Accounting Date, Journal & Reference (per mockup) ─── */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pb-2 border-b border-border/60">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="date" className="font-semibold text-foreground">
                   Accounting Date <span className="text-destructive">*</span>
@@ -294,6 +294,18 @@ export function JournalEntryCreateForm() {
                     {errors.journalId.message}
                   </p>
                 )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="reference" className="font-semibold text-foreground">
+                  Reference / Narration
+                </Label>
+                <Input
+                  id="reference"
+                  placeholder="e.g. Bank Transfer, Memo"
+                  {...register("reference")}
+                  className="w-full"
+                />
               </div>
             </div>
 
