@@ -5,7 +5,7 @@ import { defaultStatements } from "better-auth/plugins/organization/access";
 // that our domain actually needs access-controlled.
 const statement = {
   ...defaultStatements,
-  contact: ["create", "update", "archive", "view_own"],
+  contact: ["view", "create", "update", "archive", "view_own"],
   product: ["create", "update", "archive"],
   chartOfAccounts: ["create", "update", "archive"],
   transaction: ["create", "confirm", "record_payment"], // PO/Bill, SO/Invoice
@@ -17,7 +17,7 @@ export const ac = createAccessControl(statement);
 // Admin (Business Owner): full control, including archiving master data
 // and managing users/org membership.
 export const adminRole = ac.newRole({
-  contact: ["create", "update", "archive"],
+  contact: ["view", "create", "update", "archive"],
   product: ["create", "update", "archive"],
   chartOfAccounts: ["create", "update", "archive"],
   transaction: ["create", "confirm", "record_payment"],
@@ -30,7 +30,7 @@ export const adminRole = ac.newRole({
 // + views reports — but does NOT archive master data (Admin-only per doc)
 // and does NOT manage org membership.
 export const accountantRole = ac.newRole({
-  contact: ["create", "update"],
+  contact: ["view", "create", "update"],
   product: ["create", "update"],
   chartOfAccounts: ["create", "update"],
   transaction: ["create", "confirm", "record_payment"],
