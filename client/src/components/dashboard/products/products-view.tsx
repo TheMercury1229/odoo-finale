@@ -7,6 +7,7 @@ import { Columns3, List, Package, Plus, Search } from "lucide-react";
 import { ProductKanban } from "@/components/dashboard/products/product-kanban";
 import { ProductList } from "@/components/dashboard/products/product-list";
 import { useProducts } from "@/components/dashboard/products/products-hooks";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 type ProductView = "list" | "kanban";
 
 export function ProductsView() {
+  const { canCreateMasterData } = useUserPermissions();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [view, setView] = useState<ProductView>("list");
@@ -36,10 +38,12 @@ export function ProductsView() {
     <div className="flex min-w-0 flex-1 flex-col gap-5">
       {/* ─── Top bar ─── */}
       <div className="flex flex-wrap items-center gap-2">
-        <Button nativeButton={false} render={<Link href="/products/new" />}>
-          <Plus data-icon="inline-start" />
-          New
-        </Button>
+        {canCreateMasterData && (
+          <Button nativeButton={false} render={<Link href="/products/new" />}>
+            <Plus data-icon="inline-start" />
+            New
+          </Button>
+        )}
         <div className="relative min-w-48 flex-1 sm:max-w-sm">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input

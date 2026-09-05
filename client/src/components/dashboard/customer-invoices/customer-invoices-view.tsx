@@ -7,6 +7,7 @@ import { FileText, Plus, Search, ShoppingBag } from "lucide-react";
 
 import { useCustomerInvoices } from "./customer-invoices-hooks";
 import type { InvoiceStatus } from "./customer-invoices-api";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,6 +70,7 @@ export function getInvoiceStatusBadge(status: InvoiceStatus) {
 
 export function CustomerInvoicesView() {
   const router = useRouter();
+  const { canCreateTransaction } = useUserPermissions();
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -108,15 +110,17 @@ export function CustomerInvoicesView() {
         </div>
 
         {/* Right: Discoverability button */}
-        <Button
-          variant="outline"
-          nativeButton={false}
-          render={<Link href="/sales-orders" />}
-          className="text-xs font-medium"
-        >
-          <Plus className="mr-1.5 size-3.5" />
-          New Invoice from Sales Order
-        </Button>
+        {canCreateTransaction && (
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href="/sales-orders" />}
+            className="text-xs font-medium"
+          >
+            <Plus className="mr-1.5 size-3.5" />
+            New Invoice from Sales Order
+          </Button>
+        )}
       </div>
 
       {/* ─── Status Filter Tabs ─── */}
@@ -128,11 +132,10 @@ export function CustomerInvoicesView() {
               key={tab.id}
               type="button"
               onClick={() => setStatusFilter(tab.id)}
-              className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
-                isActive
+              className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${isActive
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
+                }`}
             >
               {tab.label}
             </button>

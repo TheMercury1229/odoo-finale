@@ -17,6 +17,7 @@ import {
   fetchJournalEntries,
   type JournalEntry,
 } from "./journal-entries-api";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,6 +62,7 @@ function formatCurrency(amount: number) {
 
 export function JournalEntriesView() {
   const router = useRouter();
+  const { canCreateTransaction } = useUserPermissions();
 
   // Search and filter states
   const [searchInput, setSearchInput] = useState("");
@@ -149,14 +151,18 @@ export function JournalEntriesView() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-1 sm:p-4">
       {/* ─── Top Bar: "New" on left, "Back" on right (per mockup) ─── */}
       <div className="flex items-center justify-between border-b pb-4">
-        <Button
-          type="button"
-          onClick={() => router.push("/journal-entries/new")}
-          className="rounded-lg px-4 py-2 font-medium shadow-sm transition-all hover:shadow"
-        >
-          <Plus className="mr-1.5 size-4" />
-          New
-        </Button>
+        {canCreateTransaction ? (
+          <Button
+            type="button"
+            onClick={() => router.push("/journal-entries/new")}
+            className="rounded-lg px-4 py-2 font-medium shadow-sm transition-all hover:shadow"
+          >
+            <Plus className="mr-1.5 size-4" />
+            New
+          </Button>
+        ) : (
+          <div />
+        )}
 
         <Button
           type="button"

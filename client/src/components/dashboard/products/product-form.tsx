@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { toast } from "@/components/ui/toast";
 
 const productFormSchema = z.object({
@@ -108,11 +109,10 @@ function toPayload(values: ProductFormValues): ProductPayload {
 export function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
+  const { isAdmin, canEditMasterData } = useUserPermissions();
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   const isEditing = Boolean(product);
-  const isAdmin = session?.user.role === "admin";
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -235,20 +235,22 @@ export function ProductForm({ product }: ProductFormProps) {
             Cancel
           </Button>
 
-          <Button
-            type="submit"
-            form="product-form"
-            size="sm"
-            className="gap-1.5"
-            disabled={saveMutation.isPending || archiveMutation.isPending}
-          >
-            <Check className="size-4" />
-            {saveMutation.isPending
-              ? "Saving..."
-              : isEditing
-                ? "Save Changes"
-                : "Create Product"}
-          </Button>
+          {canEditMasterData && (
+            <Button
+              type="submit"
+              form="product-form"
+              size="sm"
+              className="gap-1.5"
+              disabled={saveMutation.isPending || archiveMutation.isPending}
+            >
+              <Check className="size-4" />
+              {saveMutation.isPending
+                ? "Saving..."
+                : isEditing
+                  ? "Save Changes"
+                  : "Create Product"}
+            </Button>
+          )}
         </div>
       </div>
 

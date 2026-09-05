@@ -7,6 +7,7 @@ import { ArrowLeft, Columns3, List, Plus, Search, Users } from "lucide-react";
 import { ContactKanban } from "@/components/dashboard/contacts/contact-kanban";
 import { ContactList } from "@/components/dashboard/contacts/contact-list";
 import { useContacts } from "@/components/dashboard/contacts/contacts-hooks";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 type ContactView = "list" | "kanban";
 
 export function ContactsView() {
+  const { canCreateMasterData } = useUserPermissions();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [view, setView] = useState<ContactView>("list");
@@ -36,10 +38,12 @@ export function ContactsView() {
     <div className="flex min-w-0 flex-1 flex-col gap-5">
       {/* ─── Top bar ─── */}
       <div className="flex flex-wrap items-center gap-2">
-        <Button nativeButton={false} render={<Link href="/contacts/new" />}>
-          <Plus data-icon="inline-start" />
-          New
-        </Button>
+        {canCreateMasterData && (
+          <Button nativeButton={false} render={<Link href="/contacts/new" />}>
+            <Plus data-icon="inline-start" />
+            New
+          </Button>
+        )}
         <div className="relative min-w-48 flex-1 sm:max-w-sm">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input

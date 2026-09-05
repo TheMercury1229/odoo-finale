@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
 import { authClient } from "@/lib/auth";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 
 type SelectionKey =
   | "asset"
@@ -88,8 +89,7 @@ const selectionToAccountType: Record<SelectionKey, AccountType> = {
 export function ChartOfAccountsView() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
-  const isAdmin = session?.user.role === "admin";
+  const { isAdmin, canCreateMasterData } = useUserPermissions();
 
   const [isCreating, setIsCreating] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -260,31 +260,35 @@ export function ChartOfAccountsView() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         {/* Left Action Buttons: New, Confirm, Archived */}
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant={isCreating ? "secondary" : "default"}
-            size="sm"
-            className="gap-1.5"
-            onClick={() => {
-              setIsCreating((prev) => !prev);
-              setFormError({});
-            }}
-          >
-            <Plus className="size-4" />
-            New
-          </Button>
+          {canCreateMasterData && (
+            <>
+              <Button
+                type="button"
+                variant={isCreating ? "secondary" : "default"}
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  setIsCreating((prev) => !prev);
+                  setFormError({});
+                }}
+              >
+                <Plus className="size-4" />
+                New
+              </Button>
 
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            className="gap-1.5"
-            disabled={!isCreating || createMutation.isPending}
-            onClick={handleConfirm}
-          >
-            <Check className="size-4" />
-            {createMutation.isPending ? "Confirming..." : "Confirm"}
-          </Button>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className="gap-1.5"
+                disabled={!isCreating || createMutation.isPending}
+                onClick={handleConfirm}
+              >
+                <Check className="size-4" />
+                {createMutation.isPending ? "Confirming..." : "Confirm"}
+              </Button>
+            </>
+          )}
 
           <Button
             type="button"

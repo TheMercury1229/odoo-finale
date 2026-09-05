@@ -13,6 +13,7 @@ import {
   createJournal,
   journalTypeLabels,
 } from "@/components/dashboard/journals/journals-api";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -53,6 +54,7 @@ export function JournalCreateDialog({
   onOpenChange,
 }: JournalCreateDialogProps) {
   const queryClient = useQueryClient();
+  const { canCreateMasterData } = useUserPermissions();
 
   const { data: accounts = [] } = useQuery({
     queryKey: ["chart-of-accounts", "unarchived"],
@@ -241,13 +243,15 @@ export function JournalCreateDialog({
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            form="journal-create-form"
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? "Creating..." : "Create Journal"}
-          </Button>
+          {canCreateMasterData && (
+            <Button
+              type="submit"
+              form="journal-create-form"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? "Creating..." : "Create Journal"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

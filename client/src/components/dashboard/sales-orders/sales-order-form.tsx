@@ -100,7 +100,7 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
 
   const isExisting = Boolean(initialSo?.id);
   const status: SalesOrderStatus = initialSo?.status || "draft";
-  const isReadOnly = status !== "draft";
+  const isReadOnly = status !== "draft" || !canCreate;
 
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

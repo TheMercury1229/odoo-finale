@@ -18,6 +18,7 @@ import {
 
 import { useSalesOrder } from "@/components/dashboard/sales-orders/sales-orders-hooks";
 import { createCustomerInvoice } from "./customer-invoices-api";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ export function CustomerInvoiceCreateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const salesOrderId = searchParams.get("salesOrderId");
+  const { canCreateTransaction } = useUserPermissions();
 
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -252,15 +254,17 @@ export function CustomerInvoiceCreateForm() {
       {/* ─── Top Bar Actions ─── */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-          >
-            <Check className="mr-1.5 size-4" />
-            {isSubmitting ? "Creating Invoice..." : "Confirm & Post"}
-          </Button>
+          {canCreateTransaction && (
+            <Button
+              type="button"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              onClick={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+            >
+              <Check className="mr-1.5 size-4" />
+              {isSubmitting ? "Creating Invoice..." : "Confirm & Post"}
+            </Button>
+          )}
 
           <Button
             type="button"

@@ -74,6 +74,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { toast } from "@/components/ui/toast";
 
 const contactFormSchema = z
@@ -171,12 +172,11 @@ function toPayload(
 export function ContactForm({ contact }: ContactFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
+  const { isAdmin, canEditMasterData } = useUserPermissions();
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const isEditing = Boolean(contact);
-  const isAdmin = session?.user.role === "admin";
   const hasLinkedUser = Boolean(contact?.userId);
 
   const form = useForm<ContactFormValues>({
@@ -310,20 +310,22 @@ export function ContactForm({ contact }: ContactFormProps) {
             Cancel
           </Button>
 
-          <Button
-            type="submit"
-            form="contact-form"
-            size="sm"
-            className="gap-1.5"
-            disabled={saveMutation.isPending || archiveMutation.isPending}
-          >
-            <Check className="size-4" />
-            {saveMutation.isPending
-              ? "Saving..."
-              : isEditing
-                ? "Save Changes"
-                : "Create Contact"}
-          </Button>
+          {canEditMasterData && (
+            <Button
+              type="submit"
+              form="contact-form"
+              size="sm"
+              className="gap-1.5"
+              disabled={saveMutation.isPending || archiveMutation.isPending}
+            >
+              <Check className="size-4" />
+              {saveMutation.isPending
+                ? "Saving..."
+                : isEditing
+                  ? "Save Changes"
+                  : "Create Contact"}
+            </Button>
+          )}
         </div>
       </div>
 

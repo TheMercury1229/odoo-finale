@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import db from "../config/db.js";
 import {
+  contact,
   customerInvoice,
   journal,
   journalEntry,
@@ -91,6 +92,27 @@ export async function recordPayment(req, res, next) {
         }
         target = invoice;
         contactId = invoice.customerId;
+      }
+
+      // If requester has role "contact", validate the target belongs to their own resolved contact id
+      if (req.session?.user?.role === "contact") {
+        const [userContact] = await tx
+          .select({ id: contact.id })
+          .from(contact)
+          .where(
+            and(
+              eq(contact.userId, recordedBy),
+              eq(contact.organizationId, organizationId),
+            ),
+          )
+          .limit(1);
+
+        if (!userContact || userContact.id !== contactId) {
+          return {
+            statusCode: 403,
+            error: "You are not authorized to make a payment for this record",
+          };
+        }
       }
 
       // 2. Compute current amountDue

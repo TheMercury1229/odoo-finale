@@ -18,6 +18,7 @@ import {
 
 import { usePurchaseOrder } from "@/components/dashboard/purchase-orders/purchase-orders-hooks";
 import { createVendorBill } from "./vendor-bills-api";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ export function VendorBillCreateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const purchaseOrderId = searchParams.get("purchaseOrderId");
+  const { canCreateTransaction } = useUserPermissions();
 
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -255,15 +257,17 @@ export function VendorBillCreateForm() {
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
         {/* Left Action Group */}
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-          >
-            <Check className="mr-1.5 size-4" />
-            {isSubmitting ? "Confirming..." : "Confirm"}
-          </Button>
+          {canCreateTransaction && (
+            <Button
+              type="button"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              onClick={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+            >
+              <Check className="mr-1.5 size-4" />
+              {isSubmitting ? "Confirming..." : "Confirm"}
+            </Button>
+          )}
         </div>
 
         {/* Right Action Group */}

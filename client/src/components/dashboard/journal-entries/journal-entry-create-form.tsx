@@ -21,7 +21,11 @@ import {
 import { fetchAccounts } from "@/components/dashboard/chart-of-accounts/chart-of-accounts-api";
 import { fetchJournals } from "@/components/dashboard/journals/journals-api";
 import { fetchContacts } from "@/components/dashboard/contacts/contacts-api";
-import { createJournalEntry } from "./journal-entries-api";
+import {
+  createJournalEntry,
+  type CreateJournalEntryPayload,
+} from "./journal-entries-api";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -66,6 +70,7 @@ type FormValues = z.infer<typeof createJournalEntrySchema>;
 export function JournalEntryCreateForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { canCreateTransaction } = useUserPermissions();
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Default to today's date
@@ -173,14 +178,18 @@ export function JournalEntryCreateForm() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-1 sm:p-4">
       {/* ─── Top Bar: "Post" on left, "Cancel" and "Back" on right (per mockup) ─── */}
       <div className="flex items-center justify-between border-b pb-4">
-        <Button
-          type="button"
-          onClick={handleSubmit(onSubmit)}
-          disabled={!isBalanced || isSubmitting}
-          className=" rounded-lg px-5 py-2 font-semibold shadow-sm transition-all hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? "Posting..." : "Post"}
-        </Button>
+        {canCreateTransaction ? (
+          <Button
+            type="button"
+            onClick={handleSubmit(onSubmit)}
+            disabled={!isBalanced || isSubmitting}
+            className=" rounded-lg px-5 py-2 font-semibold shadow-sm transition-all hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "Posting..." : "Post"}
+          </Button>
+        ) : (
+          <div />
+        )}
 
         <div className="flex items-center gap-2">
           <Button
@@ -315,7 +324,7 @@ export function JournalEntryCreateForm() {
                       <TableHead className="font-semibold text-foreground text-right w-[18%]">
                         Credit
                       </TableHead>
-                      <TableHead className="w-[4%]"></TableHead>
+                      {canCreateTransaction && <TableHead className="w-[4%]"></TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -450,23 +459,25 @@ export function JournalEntryCreateForm() {
                         </TableCell>
 
                         {/* Row Remove Button */}
-                        <TableCell className="align-top py-2 text-center">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={fields.length <= 2}
-                            onClick={() => remove(index)}
-                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-30 size-8 p-0"
-                            title={
-                              fields.length <= 2
-                                ? "Minimum 2 lines required"
-                                : "Remove line"
-                            }
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </TableCell>
+                        {canCreateTransaction && (
+                          <TableCell className="align-top py-2 text-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              disabled={fields.length <= 2}
+                              onClick={() => remove(index)}
+                              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-30 size-8 p-0"
+                              title={
+                                fields.length <= 2
+                                  ? "Minimum 2 lines required"
+                                  : "Remove line"
+                              }
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -474,25 +485,27 @@ export function JournalEntryCreateForm() {
               </div>
 
               {/* Add Line Button */}
-              <div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    append({
-                      accountId: "",
-                      contactId: null,
-                      debit: 0,
-                      credit: 0,
-                    })
-                  }
-                  className="gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
-                >
-                  <Plus className="size-4" />
-                  Add line
-                </Button>
-              </div>
+              {canCreateTransaction && (
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      append({
+                        accountId: "",
+                        contactId: null,
+                        debit: 0,
+                        credit: 0,
+                      })
+                    }
+                    className="gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
+                  >
+                    <Plus className="size-4" />
+                    Add line
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* ─── Live Totals & Blocking Warning (per mockup) ─── */}

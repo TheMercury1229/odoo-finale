@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { authClient } from "@/lib/auth";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -133,6 +134,7 @@ function formatDate(dateVal?: string | Date | null) {
 export function UsersManagementView() {
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
+  const { isAdmin: isCurrentUserAdmin } = useUserPermissions();
   const currentUserId = session?.user?.id;
 
   // Search and filter states
@@ -379,16 +381,18 @@ export function UsersManagementView() {
             Refresh
           </Button>
 
-          <Button
-            size="sm"
-            onClick={() => {
-              setFormError("");
-              setIsAddUserOpen(true);
-            }}
-          >
-            <UserPlus data-icon="inline-start" />
-            Add Accountant
-          </Button>
+          {isCurrentUserAdmin && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setFormError("");
+                setIsAddUserOpen(true);
+              }}
+            >
+              <UserPlus data-icon="inline-start" />
+              Add Accountant
+            </Button>
+          )}
         </div>
       </div>
 
@@ -529,12 +533,12 @@ export function UsersManagementView() {
                 >
                   Clear Filters
                 </Button>
-              ) : (
+              ) : isCurrentUserAdmin ? (
                 <Button size="sm" onClick={() => setIsAddUserOpen(true)}>
                   <UserPlus data-icon="inline-start" />
                   Add Accountant
                 </Button>
-              )}
+              ) : null}
             </EmptyContent>
           </Empty>
         ) : (
@@ -546,7 +550,7 @@ export function UsersManagementView() {
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {isCurrentUserAdmin && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -633,51 +637,53 @@ export function UsersManagementView() {
                       </TableCell>
 
                       {/* Action Buttons */}
-                      <TableCell className="py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {isBanned ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => unbanMutation.mutate(user.id)}
-                              disabled={unbanMutation.isPending}
-                            >
-                              <CheckCircle2 data-icon="inline-start" />
-                              Unban
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={isCurrent || banMutation.isPending}
-                              onClick={() => {
-                                setBanningUser(user);
-                                setBanReason("");
-                              }}
-                              title={
-                                isCurrent
-                                  ? "You cannot ban yourself"
-                                  : "Ban user account"
-                              }
-                            >
-                              <Ban data-icon="inline-start" />
-                              Ban
-                            </Button>
-                          )}
+                      {isCurrentUserAdmin && (
+                        <TableCell className="py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {isBanned ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => unbanMutation.mutate(user.id)}
+                                disabled={unbanMutation.isPending}
+                              >
+                                <CheckCircle2 data-icon="inline-start" />
+                                Unban
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={isCurrent || banMutation.isPending}
+                                onClick={() => {
+                                  setBanningUser(user);
+                                  setBanReason("");
+                                }}
+                                title={
+                                  isCurrent
+                                    ? "You cannot ban yourself"
+                                    : "Ban user account"
+                                }
+                              >
+                                <Ban data-icon="inline-start" />
+                                Ban
+                              </Button>
+                            )}
 
-                          {!isCurrent && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeletingUser(user)}
-                              disabled={deleteMutation.isPending}
-                              title="Delete user"
-                            >
-                              <Trash2 />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                            {!isCurrent && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeletingUser(user)}
+                                disabled={deleteMutation.isPending}
+                                title="Delete user"
+                              >
+                                <Trash2 />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

@@ -11,6 +11,7 @@ import {
   journalTypeLabels,
 } from "@/components/dashboard/journals/journals-api";
 import { JournalCreateDialog } from "@/components/dashboard/journals/journal-create-dialog";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import {
 
 export function JournalsView() {
   const router = useRouter();
+  const { canCreateMasterData } = useUserPermissions();
   const [createOpen, setCreateOpen] = useState(false);
 
   const { data: journals = [], isLoading } = useQuery({
@@ -77,15 +79,19 @@ export function JournalsView() {
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       {/* ─── Top Bar: "New" on left, "Back" on right ─── */}
       <div className="flex items-center justify-between border-b pb-4">
-        <Button
-          type="button"
-          size="sm"
-          className="gap-1.5"
-          onClick={() => setCreateOpen(true)}
-        >
-          <Plus className="size-4" />
-          New
-        </Button>
+        {canCreateMasterData ? (
+          <Button
+            type="button"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Plus className="size-4" />
+            New
+          </Button>
+        ) : (
+          <div />
+        )}
 
         <Button
           type="button"

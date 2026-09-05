@@ -121,7 +121,7 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
 
   const isExisting = Boolean(initialPo?.id);
   const status: PurchaseOrderStatus = initialPo?.status || "draft";
-  const isReadOnly = status !== "draft";
+  const isReadOnly = status !== "draft" || !canCreate;
 
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -389,8 +389,8 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
             </>
           )}
 
-          {/* "Create Bill": ONLY when confirmed AND no bill exists yet */}
-          {status === "confirmed" && !initialPo?.hasBill && (
+          {/* "Create Bill": ONLY when confirmed AND no bill exists yet AND authorized */}
+          {status === "confirmed" && !initialPo?.hasBill && canCreate && (
             <Button
               type="button"
               className="bg-purple-600 hover:bg-purple-700 text-white font-medium"

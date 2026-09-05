@@ -17,6 +17,7 @@ import {
 
 import { useRecordPayment } from "./payments-hooks";
 import { triggerPrint } from "@/lib/print";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,7 @@ export interface PaymentFormProps {
   totalAmount?: number;
   amountDue?: number;
   backUrl?: string;
+  variant?: "admin" | "portal";
 }
 
 export function PaymentForm({
@@ -72,21 +74,27 @@ export function PaymentForm({
   totalAmount,
   amountDue,
   backUrl,
+  variant = "admin",
 }: PaymentFormProps) {
   const router = useRouter();
+  const { canRecordPayment } = useUserPermissions();
   const [apiError, setApiError] = useState<string | null>(null);
+
+  const isPortal = variant === "portal";
 
   // Derive final values from targetData or flat props
   const finalNumber = targetNumber ?? targetData?.number ?? "";
   const finalPartnerName = partnerName ?? targetData?.partnerName ?? "—";
   const finalTotalAmount = totalAmount ?? targetData?.totalAmount ?? 0;
   const finalAmountDue = amountDue ?? targetData?.amountDue ?? 0;
-  const finalBackUrl =
-    backUrl ??
-    targetData?.backUrl ??
-    (targetType === "vendor_bill"
+  const defaultBackUrl = isPortal
+    ? targetType === "vendor_bill"
+      ? `/portal/bills/${targetId}`
+      : `/portal/invoices/${targetId}`
+    : targetType === "vendor_bill"
       ? `/vendor-bills/${targetId}`
-      : `/customer-invoices/${targetId}`);
+      : `/customer-invoices/${targetId}`;
+  const finalBackUrl = backUrl ?? targetData?.backUrl ?? defaultBackUrl;
 
   const isVendorBill = targetType === "vendor_bill";
   const defaultPaymentType = isVendorBill ? "Send" : "Receive";
@@ -170,15 +178,17 @@ export function PaymentForm({
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
         {/* Left Action Group: Confirm, Cancel, Options Gear */}
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-            onClick={handleSubmit(onSubmit)}
-            disabled={recordPaymentMutation.isPending}
-          >
-            <Check className="mr-1.5 size-4" />
-            {recordPaymentMutation.isPending ? "Confirming..." : "Confirm"}
-          </Button>
+          {(isPortal || canRecordPayment) && (
+            <Button
+              type="button"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              onClick={handleSubmit(onSubmit)}
+              disabled={recordPaymentMutation.isPending}
+            >
+              <Check className="mr-1.5 size-4" />
+              {recordPaymentMutation.isPending ? "Confirming..." : "Confirm"}
+            </Button>
+          )}
 
           <Button
             type="button"
@@ -189,52 +199,56 @@ export function PaymentForm({
             Cancel
           </Button>
 
-          {/* Options Gear Menu (Mockup: 1. Print, 2. Send) */}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-9"
-                  title="Payment Options"
-                  disabled={recordPaymentMutation.isPending}
-                />
-              }
-            >
-              <Settings className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem
-                onClick={() => triggerPrint({ title: "Payment Voucher" })}
-                className="cursor-pointer"
+          {/* Options Gear Menu (Admin Only) */}
+          {!isPortal && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-9"
+                    title="Payment Options"
+                    disabled={recordPaymentMutation.isPending}
+                  />
+                }
               >
-                <Printer className="mr-2 size-4" />
-                <span>1. Print Voucher</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  alert(
-                    "Payment voucher & journal notification will be sent to partner email.",
-                  );
-                }}
-                className="cursor-pointer"
-              >
-                <Send className="mr-2 size-4" />
-                <span>2. Send</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <Settings className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => triggerPrint({ title: "Payment Voucher" })}
+                  className="cursor-pointer"
+                >
+                  <Printer className="mr-2 size-4" />
+                  <span>1. Print Voucher</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    alert(
+                      "Payment voucher & journal notification will be sent to partner email.",
+                    );
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Send className="mr-2 size-4" />
+                  <span>2. Send</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
-        {/* Right Breadcrumb / Status Indicator (Per Mockup) */}
-        <div className="flex items-center gap-1.5 rounded-lg border bg-muted/40 px-3 py-1 text-xs font-medium">
-          <span className="text-muted-foreground">Draft</span>
-          <span className="text-muted-foreground/60">→</span>
-          <span className="text-primary font-bold">Confirm</span>
-          <span className="text-muted-foreground/60">→</span>
-          <span className="text-muted-foreground">Cancelled</span>
-        </div>
+        {/* Right Breadcrumb / Status Indicator (Admin Only) */}
+        {!isPortal && (
+          <div className="flex items-center gap-1.5 rounded-lg border bg-muted/40 px-3 py-1 text-xs font-medium">
+            <span className="text-muted-foreground">Draft</span>
+            <span className="text-muted-foreground/60">→</span>
+            <span className="text-primary font-bold">Confirm</span>
+            <span className="text-muted-foreground/60">→</span>
+            <span className="text-muted-foreground">Cancelled</span>
+          </div>
+        )}
       </div>
 
       {/* ─── Inline API Error Alert ─── */}

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FileText, Plus, Search, ShoppingCart } from "lucide-react";
+import { FileText, Plus, Printer, Search, ShoppingCart } from "lucide-react";
 
 import { useVendorBills } from "./vendor-bills-hooks";
 import type { BillStatus } from "./vendor-bills-api";
+import { triggerPrint } from "@/lib/print";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -94,7 +95,7 @@ export function VendorBillsView() {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-5">
       {/* ─── Top Action Bar ─── */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 print:hidden">
         {/* Discoverability button to Purchase Orders since bills originate from POs */}
         <Button
           variant="outline"
@@ -133,14 +134,32 @@ export function VendorBillsView() {
         </div>
       </div>
 
+      {/* ─── Printable Header (Only Visible in Print) ─── */}
+      <div className="hidden print:block mb-4">
+        <h1 className="text-xl font-bold text-gray-900">Urban Furniture</h1>
+        <p className="text-sm text-gray-600">Vendor Bills Summary</p>
+      </div>
+
       {/* ─── Heading Row ─── */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">Vendor Bills</h1>
           {!isLoading && vendorBills.length > 0 ? (
             <Badge variant="secondary">{vendorBills.length}</Badge>
           ) : null}
         </div>
+        {!isLoading && vendorBills.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => triggerPrint({ title: "Vendor Bills" })}
+            className="text-foreground gap-1.5"
+          >
+            <Printer className="size-4" />
+            Print List
+          </Button>
+        )}
       </div>
 
       {/* ─── Main Content ─── */}

@@ -14,6 +14,7 @@ import {
 import { type CustomerInvoice } from "./customer-invoices-api";
 import { getInvoiceStatusBadge } from "./customer-invoices-view";
 import { triggerPrint } from "@/lib/print";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -57,6 +58,7 @@ export function CustomerInvoiceDetailView({
 }: CustomerInvoiceDetailViewProps) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
+  const { canRecordPayment } = useUserPermissions();
 
   // Payment breakdown grouped by method
   const payments = invoice.payments || [];
@@ -86,7 +88,7 @@ export function CustomerInvoiceDetailView({
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4 print:hidden">
         {/* Left Action Group: Pay, Print */}
         <div className="flex items-center gap-2">
-          {invoice.amountDue > 0 && (
+          {canRecordPayment && invoice.amountDue > 0 && (
             <Button
               type="button"
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"

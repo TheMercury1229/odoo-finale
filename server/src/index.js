@@ -14,6 +14,7 @@ import paymentsRouter from "./routes/payments.route.js";
 import salesOrdersRouter from "./routes/sales-orders.route.js";
 import customerInvoicesRouter from "./routes/customer-invoices.route.js";
 import reportsRouter from "./routes/reports.route.js";
+import portalRouter from "./routes/portal.route.js";
 const port = process.env.PORT || 5000;
 const app = express();
 app.use(
@@ -37,6 +38,7 @@ app.use("/api/payments", paymentsRouter);
 app.use("/api/sales-orders", salesOrdersRouter);
 app.use("/api/customer-invoices", customerInvoicesRouter);
 app.use("/api/reports", reportsRouter);
+app.use("/api/portal", portalRouter);
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });

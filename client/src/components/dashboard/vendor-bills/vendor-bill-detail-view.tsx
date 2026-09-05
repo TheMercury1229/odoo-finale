@@ -15,6 +15,7 @@ import {
 import { type VendorBill } from "./vendor-bills-api";
 import { getBillStatusBadge } from "./vendor-bills-view";
 import { triggerPrint } from "@/lib/print";
+import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ interface VendorBillDetailViewProps {
 export function VendorBillDetailView({ bill }: VendorBillDetailViewProps) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
+  const { canRecordPayment } = useUserPermissions();
 
   // Payment breakdown grouped by method
   const payments = bill.payments || [];
@@ -86,7 +88,7 @@ export function VendorBillDetailView({ bill }: VendorBillDetailViewProps) {
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4 print:hidden">
         {/* Left Action Group */}
         <div className="flex items-center gap-2">
-          {bill.amountDue > 0 && (
+          {canRecordPayment && bill.amountDue > 0 && (
             <Button
               type="button"
               className="bg-purple-600 hover:bg-purple-700 text-white font-medium"
