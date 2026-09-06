@@ -37,7 +37,7 @@ export interface ContactPayload {
   addressState?: string;
   addressPincode?: string;
   profileImageUrl?: string;
-  // Password for the portal user account — mandatory for new contacts
+  // Optional password for the portal user account (auto-generated server-side if omitted)
   password?: string;
 }
 

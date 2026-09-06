@@ -253,9 +253,10 @@ export function CustomerInvoiceCreateForm() {
   };
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-6 max-w-6xl mx-auto pb-16">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 pb-16">
       {/* ─── Top Bar Actions ─── */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
+        {/* Left Action Group */}
         <div className="flex items-center gap-2">
           {canCreateTransaction && (
             <Button
@@ -268,7 +269,10 @@ export function CustomerInvoiceCreateForm() {
               {isSubmitting ? "Creating Invoice..." : "Confirm & Post"}
             </Button>
           )}
+        </div>
 
+        {/* Right Action Group */}
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -276,18 +280,6 @@ export function CustomerInvoiceCreateForm() {
             disabled={isSubmitting}
           >
             Cancel
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push("/sales-orders")}
-            disabled={isSubmitting}
-          >
-            <ArrowLeft className="mr-1.5 size-4" />
-            Back to Sales Orders
           </Button>
         </div>
       </div>
@@ -314,14 +306,9 @@ export function CustomerInvoiceCreateForm() {
         <CardHeader className="pb-4 border-b border-border/60">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-2xl font-bold tracking-tight">
-                  New Customer Invoice
-                </CardTitle>
-                <span className="font-mono text-xs bg-muted px-2.5 py-1 rounded-md text-muted-foreground">
-                  Draft → Confirm
-                </span>
-              </div>
+              <CardTitle className="text-2xl font-bold tracking-tight">
+                New Customer Invoice
+              </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Creating customer invoice from Sales Order{" "}
                 <Link

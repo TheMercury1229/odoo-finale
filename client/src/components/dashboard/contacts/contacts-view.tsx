@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Columns3, List, Plus, Search, Users } from "lucide-react";
 
 import { ContactKanban } from "@/components/dashboard/contacts/contact-kanban";
@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { PageHeader } from "@/components/primitives/PageHeader";
+import { TablePagination } from "@/components/primitives/TablePagination";
 
 type ContactView = "list" | "kanban";
 
@@ -23,17 +24,31 @@ export function ContactsView() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<ContactView>("list");
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setSearch(searchInput.trim()), 300);
     return () => window.clearTimeout(timeout);
   }, [searchInput]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, includeArchived]);
+
   const contactsQuery = useContacts({ search, includeArchived, view });
   const contacts =
     contactsQuery.data?.view === "list"
       ? contactsQuery.data.contacts
       : contactsQuery.data?.groups.flatMap((group) => group.contacts) || [];
+
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(contacts.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedContacts = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return contacts.slice(start, start + PAGE_SIZE);
+  }, [contacts, safeCurrentPage]);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-5">
@@ -137,7 +152,15 @@ export function ContactsView() {
       ) : view === "list" ? (
         <Card>
           <CardContent className="p-0">
-            <ContactList contacts={contacts} />
+            <ContactList contacts={paginatedContacts} />
+            <TablePagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={contacts.length}
+              pageSize={PAGE_SIZE}
+              itemLabel="contacts"
+              onPageChange={setCurrentPage}
+            />
           </CardContent>
         </Card>
       ) : (

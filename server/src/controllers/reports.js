@@ -92,6 +92,9 @@ export async function getBalanceSheet(req, res, next) {
       .as("entry_totals");
 
     // 2. Query chart_of_accounts joined with aggregated subquery
+    // 2. Query chart_of_accounts joined with aggregated subquery
+    // Include all account types (asset, liability, capital, income, expense)
+    // so that unclosed net income (current year earnings) correctly flows into Capital & Equity
     const rows = await db
       .select({
         accountId: chartOfAccounts.id,
@@ -107,7 +110,7 @@ export async function getBalanceSheet(req, res, next) {
       .where(
         and(
           eq(chartOfAccounts.organizationId, organizationId),
-          inArray(chartOfAccounts.type, ["asset", "liability", "capital"]),
+          inArray(chartOfAccounts.type, ["asset", "liability", "capital", "income", "expense"]),
         ),
       )
       .orderBy(asc(chartOfAccounts.name));
@@ -115,6 +118,9 @@ export async function getBalanceSheet(req, res, next) {
     const assets = [];
     const liabilities = [];
     const capital = [];
+
+    let totalIncome = 0;
+    let totalExpenses = 0;
 
     for (const row of rows) {
       const debit = Number(row.totalDebit);
@@ -124,9 +130,19 @@ export async function getBalanceSheet(req, res, next) {
       if (row.type === "asset") {
         // Assets are debit-normal
         rawBalance = debit - credit;
-      } else {
+      } else if (row.type === "liability" || row.type === "capital") {
         // Liabilities & Capital are credit-normal
         rawBalance = credit - debit;
+      } else if (row.type === "income") {
+        // Income is credit-normal
+        rawBalance = credit - debit;
+        totalIncome += rawBalance;
+        continue;
+      } else if (row.type === "expense") {
+        // Expense is debit-normal
+        rawBalance = debit - credit;
+        totalExpenses += rawBalance;
+        continue;
       }
 
       const balance = round2(rawBalance);
@@ -148,6 +164,18 @@ export async function getBalanceSheet(req, res, next) {
       } else if (row.type === "capital") {
         capital.push(entry);
       }
+    }
+
+    // In fundamental double-entry bookkeeping:
+    // Assets = Liabilities + Capital + (Income - Expenses)
+    // The unclosed profit/loss flows into Equity as Current Year Earnings
+    const currentYearEarnings = round2(totalIncome - totalExpenses);
+    if (Math.abs(currentYearEarnings) > 0.0001 || (capital.length === 0 && (totalIncome > 0 || totalExpenses > 0))) {
+      capital.push({
+        accountId: "current_year_earnings",
+        accountName: "Current Year Earnings",
+        balance: currentYearEarnings,
+      });
     }
 
     const totalAssets = round2(assets.reduce((sum, item) => sum + item.balance, 0));

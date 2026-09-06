@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Search, ShoppingBag } from "lucide-react";
 
 import { authClient } from "@/lib/auth";
 import { DataTable } from "@/components/primitives/DataTable";
+import { TablePagination } from "@/components/primitives/TablePagination";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { useSalesOrders } from "./sales-orders-hooks";
@@ -43,11 +44,16 @@ export function SalesOrdersView() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   const {
     data: salesOrders = [],
@@ -57,6 +63,15 @@ export function SalesOrdersView() {
     search,
     status: statusFilter,
   });
+
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(salesOrders.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedSalesOrders = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return salesOrders.slice(start, start + PAGE_SIZE);
+  }, [salesOrders, safeCurrentPage]);
 
   const statusTabs = [
     { id: "all", label: "All" },
@@ -102,11 +117,10 @@ export function SalesOrdersView() {
               key={tab.id}
               type="button"
               onClick={() => setStatusFilter(tab.id)}
-              className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
+              className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${isActive
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
             >
               {tab.label}
             </button>
@@ -140,42 +154,58 @@ export function SalesOrdersView() {
             )}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="w-36 font-semibold">Order No.</TableHead>
-                <TableHead className="font-semibold">Customer Name</TableHead>
-                <TableHead className="w-36 font-semibold">Order Date</TableHead>
-                <TableHead className="w-32 font-semibold">Status</TableHead>
-                <TableHead className="w-40 text-right font-semibold">
-                  Total
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {salesOrders.map((so) => (
-                <TableRow
-                  key={so.id}
-                  onClick={() => router.push(`/sales-orders/${so.id}`)}
-                  className="cursor-pointer hover:bg-muted/30 transition-colors"
-                >
-                  <TableCell className="font-mono font-semibold text-primary">
-                    {so.soNumber}
-                  </TableCell>
-                  <TableCell className="font-medium text-foreground">
-                    {so.customerName || "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(so.orderDate)}
-                  </TableCell>
-                  <TableCell>{getSalesOrderStatusBadge(so.status)}</TableCell>
-                  <TableCell className="text-right font-mono font-semibold text-foreground">
-                    {formatCurrency(so.total)}
-                  </TableCell>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="w-36 font-semibold">Order No.</TableHead>
+                  <TableHead className="font-semibold">Customer Name</TableHead>
+                  <TableHead className="w-36 font-semibold">Order Date</TableHead>
+                  <TableHead className="w-32 font-semibold">Status</TableHead>
+                  <TableHead className="w-40 text-right font-semibold">
+                    Total
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedSalesOrders.map((so) => (
+                  <TableRow
+                    key={so.id}
+                    onClick={() => router.push(`/sales-orders/${so.id}`)}
+                    className="cursor-pointer hover:bg-muted/30 transition-colors"
+                  >
+                    <TableCell className="font-mono font-semibold text-primary">
+                      {so.soNumber}
+                    </TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      {so.customerName || "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(so.orderDate)}
+                    </TableCell>
+                    <TableCell>{getSalesOrderStatusBadge(so.status)}</TableCell>
+                    <TableCell className="text-right font-mono font-semibold text-foreground">
+                      {formatCurrency(so.total)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {!isLoading && salesOrders.length > 0 && (
+              <TablePagination
+                currentPage={safeCurrentPage}
+                totalPages={totalPages}
+                totalItems={salesOrders.length}
+                pageSize={PAGE_SIZE}
+                itemLabel="sales orders"
+                onPageChange={setCurrentPage}
+              />
+
+
+            )}
+
+          </>
         )}
       </DataTable>
     </div>

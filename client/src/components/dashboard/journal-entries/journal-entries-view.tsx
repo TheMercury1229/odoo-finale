@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   FileSpreadsheet,
   Plus,
   RotateCcw,
@@ -17,17 +16,11 @@ import { fetchJournalEntries, type JournalEntry } from "./journal-entries-api";
 import { useUserPermissions } from "@/lib/use-user-permissions";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
+import { TablePagination } from "@/components/primitives/TablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -44,7 +37,7 @@ export function JournalEntriesView() {
   // Search and filter states
   const [searchInput, setSearchInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: journalEntries = [], isLoading } = useQuery({
     queryKey: ["journal-entries"],
@@ -107,73 +100,64 @@ export function JournalEntriesView() {
         }
       }
 
-      // 3. Status filter
-      if (selectedStatus !== "all") {
-        if (entry.status?.toLowerCase() !== selectedStatus.toLowerCase()) {
-          return false;
-        }
-      }
-
       return true;
     });
-  }, [journalEntries, searchInput, selectedCategory, selectedStatus]);
+  }, [journalEntries, searchInput, selectedCategory]);
 
   const hasActiveFilters =
     searchInput.trim() !== "" ||
-    selectedCategory !== "all" ||
-    selectedStatus !== "all";
+    selectedCategory !== "all";
 
   function clearAllFilters() {
     setSearchInput("");
     setSelectedCategory("all");
-    setSelectedStatus("all");
+    setCurrentPage(1);
   }
 
+  // Reset page when search or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchInput, selectedCategory]);
+
+  // Pagination (10 entries per page)
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedEntries = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return filteredEntries.slice(start, start + PAGE_SIZE);
+  }, [filteredEntries, safeCurrentPage]);
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-1 sm:p-4">
-      {/* ─── Top Bar: "New" on left, "Back" on right (per mockup) ─── */}
-      <div className="flex items-center justify-between border-b pb-4">
-        {canCreateTransaction ? (
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      {/* ─── Header Title, Counter & New Action ─── */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <FileSpreadsheet className="size-5 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
+            Journal Entries
+          </h1>
+          {!isLoading && (
+            <Badge variant="secondary" className="font-mono text-xs">
+              {filteredEntries.length}
+              {filteredEntries.length !== journalEntries.length &&
+                ` of ${journalEntries.length}`}
+            </Badge>
+          )}
+        </div>
+
+        {canCreateTransaction && (
           <Button
             type="button"
+            size="sm"
             onClick={() => router.push("/journal-entries/new")}
-            className="rounded-lg px-4 py-2 font-medium shadow-sm transition-all hover:shadow"
+            className="gap-1.5 h-9"
           >
-            <Plus className="mr-1.5 size-4" />
+            <Plus className="size-4" />
             New
           </Button>
-        ) : (
-          <div />
         )}
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          className="rounded-lg px-4 py-2 font-medium border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-        >
-          <ArrowLeft className="mr-1.5 size-4" />
-          Back
-        </Button>
-      </div>
-
-      {/* ─── Header Title & Counter ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <FileSpreadsheet className="size-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Journal Entries
-            </h1>
-            {!isLoading && (
-              <Badge variant="secondary" className="font-mono text-xs">
-                {filteredEntries.length}
-                {filteredEntries.length !== journalEntries.length &&
-                  ` of ${journalEntries.length}`}
-              </Badge>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* ─── Search & Category Filters Toolbar ─── */}
@@ -197,23 +181,6 @@ export function JournalEntriesView() {
                 <X className="size-3.5" />
               </button>
             )}
-          </div>
-
-          {/* Status Dropdown Filter */}
-          <div className="w-full sm:w-36">
-            <Select
-              value={selectedStatus}
-              onValueChange={(val) => setSelectedStatus(val ?? "all")}
-            >
-              <SelectTrigger className="h-9 text-xs w-full">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="posted">Posted</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Clear Filters Button */}
@@ -330,7 +297,7 @@ export function JournalEntriesView() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredEntries.map((entry: JournalEntry) => (
+                paginatedEntries.map((entry: JournalEntry) => (
                   <TableRow
                     key={entry.id}
                     className="hover:bg-muted/30 transition-colors"
@@ -358,6 +325,17 @@ export function JournalEntriesView() {
               )}
             </TableBody>
           </Table>
+
+          {!isLoading && filteredEntries.length > 0 && (
+            <TablePagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={filteredEntries.length}
+              pageSize={PAGE_SIZE}
+              itemLabel="entries"
+              onPageChange={setCurrentPage}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

@@ -237,21 +237,6 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
     }
   };
 
-  // Reset / New button handler
-  const handleNew = () => {
-    if (isExisting) {
-      router.push("/purchase-orders/new");
-    } else {
-      reset({
-        vendorId: "",
-        orderDate: today,
-        lines: [
-          { productId: "", analyticAccountId: null, quantity: 1, unitPrice: 0 },
-        ],
-      });
-      setApiError(null);
-    }
-  };
 
   // Save / Submit handler
   const onSaveDraft = async (values: FormValues) => {
@@ -282,38 +267,20 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
   // Confirm PO handler
   const executeConfirm = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
-    if (isSubmitting) return;
+    if (!initialPo?.id || isSubmitting) return;
     try {
       setIsSubmitting(true);
       setApiError(null);
 
-      let poId = initialPo?.id;
+      // Save latest edits before confirming
+      await handleSubmit(async (values) => {
+        await updatePurchaseOrder(initialPo.id, values);
+      })();
 
-      // If new, save first
-      if (!isExisting) {
-        let createdId: string | null = null;
-        await handleSubmit(async (values) => {
-          const created = await createPurchaseOrder(values);
-          createdId = created.id;
-        })();
-        poId = createdId || undefined;
-        if (!poId) {
-          setIsSubmitting(false);
-          return;
-        }
-      } else if (status === "draft") {
-        // Update first before confirming to ensure latest line items are saved
-        await handleSubmit(async (values) => {
-          await updatePurchaseOrder(initialPo!.id, values);
-        })();
-      }
-
-      if (poId) {
-        await confirmPurchaseOrder(poId);
-        setConfirmDialogOpen(false);
-        router.refresh();
-        router.push(`/purchase-orders/${poId}`);
-      }
+      await confirmPurchaseOrder(initialPo.id);
+      setConfirmDialogOpen(false);
+      router.refresh();
+      router.push(`/purchase-orders/${initialPo.id}`);
     } catch (err: any) {
       setConfirmDialogOpen(false);
       const msg =
@@ -356,24 +323,26 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
   };
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-6 max-w-6xl mx-auto pb-16">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 pb-16">
       {/* ─── Top Bar Actions (Per Mockup) ─── */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
         {/* Left Action Group */}
-        <div className="flex flex-wrap items-center gap-2">
-          {canCreate && (
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
+          {/* On CREATE form (!isExisting): Only show "Save Draft" (creates PO via POST, status: draft) */}
+          {!isExisting && canCreate && (
             <Button
               type="button"
-              variant="outline"
-              onClick={handleNew}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              onClick={handleSubmit(onSaveDraft)}
               disabled={isSubmitting}
             >
-              <Plus className="mr-1.5 size-4" />
-              New
+              {isSubmitting ? "Saving..." : "Save Draft"}
             </Button>
           )}
 
-          {status === "draft" && canCreate && (
+          {/* On EDIT/DETAIL form (isExisting): */}
+          {/* If status is "draft": show "Save Draft" and "Confirm" */}
+          {isExisting && status === "draft" && canCreate && (
             <>
               <Button
                 type="button"
@@ -381,7 +350,7 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                 onClick={handleSubmit(onSaveDraft)}
                 disabled={isSubmitting}
               >
-                Save Draft
+                {isSubmitting ? "Saving..." : "Save Draft"}
               </Button>
               <Button
                 type="button"
@@ -395,11 +364,11 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
             </>
           )}
 
-          {/* "Create Bill": ONLY when confirmed AND no bill exists yet AND authorized */}
-          {status === "confirmed" && !initialPo?.hasBill && canCreate && (
+          {/* If status is "confirmed": show "Create Bill" (if no bill exists yet) */}
+          {isExisting && status === "confirmed" && !initialPo?.hasBill && canCreate && (
             <Button
               type="button"
-              className="bg-purple-600 hover:bg-purple-700 text-white font-medium"
+              className=" text-white font-medium"
               onClick={handleCreateBill}
               disabled={isSubmitting}
             >
@@ -410,33 +379,6 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
         </div>
 
         {/* Right Action Group */}
-        <div className="flex items-center gap-2">
-          {/* "Cancel": visible when draft or confirmed AND no bill exists */}
-          {(status === "draft" || status === "confirmed") &&
-            !initialPo?.hasBill &&
-            canCreate &&
-            isExisting && (
-              <Button
-                type="button"
-                variant="outline"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
-                onClick={() => setCancelDialogOpen(true)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-            )}
-
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push("/purchase-orders")}
-            disabled={isSubmitting}
-          >
-            <ArrowLeft className="mr-1.5 size-4" />
-            Back
-          </Button>
-        </div>
       </div>
 
       {/* ─── Inline API Error Alert ─── */}
@@ -803,7 +745,7 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                                     className="font-mono text-right"
                                     value={
                                       field.value === undefined ||
-                                      field.value === null
+                                        field.value === null
                                         ? ""
                                         : field.value
                                     }
@@ -847,7 +789,7 @@ export function PurchaseOrderForm({ initialPo }: PurchaseOrderFormProps) {
                                     className="font-mono text-right"
                                     value={
                                       field.value === undefined ||
-                                      field.value === null
+                                        field.value === null
                                         ? ""
                                         : field.value
                                     }

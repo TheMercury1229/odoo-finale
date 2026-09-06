@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Columns3, List, Package, Plus, Search } from "lucide-react";
 
 import { ProductKanban } from "@/components/dashboard/products/product-kanban";
@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { PageHeader } from "@/components/primitives/PageHeader";
+import { TablePagination } from "@/components/primitives/TablePagination";
 
 type ProductView = "list" | "kanban";
 
@@ -23,17 +24,31 @@ export function ProductsView() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<ProductView>("list");
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setSearch(searchInput.trim()), 300);
     return () => window.clearTimeout(timeout);
   }, [searchInput]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, includeArchived]);
+
   const productsQuery = useProducts({ search, includeArchived, view });
   const products =
     productsQuery.data?.view === "list"
       ? productsQuery.data.products
       : productsQuery.data?.groups.flatMap((group) => group.products) || [];
+
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(products.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return products.slice(start, start + PAGE_SIZE);
+  }, [products, safeCurrentPage]);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-5">
@@ -137,7 +152,15 @@ export function ProductsView() {
       ) : view === "list" ? (
         <Card>
           <CardContent className="p-0">
-            <ProductList products={products} />
+            <ProductList products={paginatedProducts} />
+            <TablePagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={products.length}
+              pageSize={PAGE_SIZE}
+              itemLabel="products"
+              onPageChange={setCurrentPage}
+            />
           </CardContent>
         </Card>
       ) : (

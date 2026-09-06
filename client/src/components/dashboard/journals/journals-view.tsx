@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookText, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { PageHeader } from "@/components/primitives/PageHeader";
+import { TablePagination } from "@/components/primitives/TablePagination";
 
 import {
   type JournalType,
@@ -25,14 +26,23 @@ import {
 } from "@/components/ui/table";
 
 export function JournalsView() {
-  const router = useRouter();
   const { canCreateMasterData } = useUserPermissions();
   const [createOpen, setCreateOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: journals = [], isLoading } = useQuery({
     queryKey: ["journals"],
     queryFn: fetchJournals,
   });
+
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(journals.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedJournals = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return journals.slice(start, start + PAGE_SIZE);
+  }, [journals, safeCurrentPage]);
 
   function getTypeBadge(type: JournalType) {
     switch (type) {
@@ -76,47 +86,32 @@ export function JournalsView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      {/* ─── Top Bar: "New" on left, "Back" on right ─── */}
-      <div className="flex items-center justify-between border-b pb-4">
-        {canCreateMasterData ? (
-          <Button
-            type="button"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setCreateOpen(true)}
-          >
-            <Plus className="size-4" />
-            New
-          </Button>
-        ) : (
-          <div />
-        )}
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="size-4" />
-          Back
-        </Button>
-      </div>
-
-      {/* ─── Header Title ─── */}
-      <div>
-        <div className="flex items-center gap-2">
-          <BookText className="size-5 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Journals
-          </h1>
-        </div>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Journals organize transactions into distinct accounting categories.
-        </p>
-      </div>
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      {/* ─── Header matching Contacts/Products pattern ─── */}
+      <PageHeader
+        title="Journals"
+        description="Journals organize transactions into distinct accounting categories."
+        actions={
+          <div className="flex items-center gap-2">
+            {!isLoading && journals.length > 0 ? (
+              <Badge variant="secondary" className="h-7 px-2.5">
+                {journals.length}
+              </Badge>
+            ) : null}
+            {canCreateMasterData && (
+              <Button
+                type="button"
+                size="sm"
+                className="gap-1.5 h-9"
+                onClick={() => setCreateOpen(true)}
+              >
+                <Plus className="size-4" />
+                New
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* ─── Journals Table ─── */}
       <Card>
@@ -157,7 +152,7 @@ export function JournalsView() {
                   </TableCell>
                 </TableRow>
               ) : (
-                journals.map((j) => (
+                paginatedJournals.map((j) => (
                   <TableRow key={j.id} className="transition-colors">
                     <TableCell className="font-medium text-foreground">
                       {j.name}
@@ -177,6 +172,17 @@ export function JournalsView() {
               )}
             </TableBody>
           </Table>
+
+          {!isLoading && journals.length > 0 && (
+            <TablePagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={journals.length}
+              pageSize={PAGE_SIZE}
+              itemLabel="journals"
+              onPageChange={setCurrentPage}
+            />
+          )}
         </CardContent>
       </Card>
 

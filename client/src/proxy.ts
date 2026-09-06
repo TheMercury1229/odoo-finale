@@ -72,10 +72,13 @@ export async function proxy(request: NextRequest) {
     );
   }
 
+  const isProfileRoute = pathname === "/profile" || pathname.startsWith("/profile/");
+
   if (
     session.isAuthenticated &&
     session.role === "contact" &&
-    !pathname.startsWith("/portal")
+    !pathname.startsWith("/portal") &&
+    !isProfileRoute
   ) {
     return NextResponse.redirect(new URL("/portal/invoices", request.url));
   }

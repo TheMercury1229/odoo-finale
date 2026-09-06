@@ -1,12 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft,
-  Calendar,
-  LayoutGrid,
+  Columns3,
   List,
   PiggyBank,
   Plus,
@@ -16,7 +15,9 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { type Budget, type BudgetStatus, fetchBudgets } from "./budgets-api";
 import { formatCurrency } from "../reports/reports-api";
+import { PageHeader } from "@/components/primitives/PageHeader";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
+import { TablePagination } from "@/components/primitives/TablePagination";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,9 +62,9 @@ function MiniPieChart({ committedAmount, achievedAmount }: MiniPieProps) {
     }
     return [
       { name: "Achieved", value: achieved, color: "#0ea5e9" }, // sky-500
-      { name: "Balance", value: balance, color: "#f43f5e" }, // rose-500
+      { name: "Remaining", value: balance, color: "#f43f5e" }, // rose-500
     ];
-  }, [achieved, balance, committedAmount]);
+  }, [committedAmount, achieved, balance]);
 
   const percent =
     committedAmount > 0
@@ -71,8 +72,8 @@ function MiniPieChart({ committedAmount, achievedAmount }: MiniPieProps) {
       : 0;
 
   return (
-    <div className="flex items-center gap-2.5 py-1">
-      <div className="size-10 shrink-0">
+    <div className="flex items-center gap-2">
+      <div className="size-9 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
@@ -81,22 +82,23 @@ function MiniPieChart({ committedAmount, achievedAmount }: MiniPieProps) {
                 name,
               ]}
               contentStyle={{
+                borderRadius: "8px",
                 fontSize: "11px",
-                borderRadius: "6px",
                 padding: "4px 8px",
-                backgroundColor: "var(--background)",
-                borderColor: "var(--border)",
+                backgroundColor: "hsl(var(--popover))",
+                borderColor: "hsl(var(--border))",
+                color: "hsl(var(--popover-foreground))",
               }}
             />
             <Pie
               data={data}
               dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              innerRadius={8}
-              outerRadius={18}
+              innerRadius={10}
+              outerRadius={16}
               strokeWidth={1}
+              stroke="hsl(var(--background))"
+              startAngle={90}
+              endAngle={-270}
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -105,9 +107,8 @@ function MiniPieChart({ committedAmount, achievedAmount }: MiniPieProps) {
           </PieChart>
         </ResponsiveContainer>
       </div>
-
-      <div className="flex flex-col text-[11px] leading-snug">
-        <span className="flex items-center gap-1 font-medium text-sky-600 dark:text-sky-400">
+      <div className="flex flex-col text-[11px] font-mono leading-tight">
+        <span className="flex items-center gap-1 font-semibold text-foreground">
           <span className="inline-block size-1.5 rounded-full bg-sky-500" />
           {formatCurrency(achieved)} ({percent}%)
         </span>
@@ -124,11 +125,16 @@ export function BudgetsView() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: budgets = [], isLoading } = useQuery({
     queryKey: ["budgets"],
     queryFn: fetchBudgets,
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const filteredBudgets = useMemo(() => {
     return budgets.filter((b) => {
@@ -145,65 +151,74 @@ export function BudgetsView() {
     });
   }, [budgets, search]);
 
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-2 sm:p-4">
-      {/* ─── Top Bar matching Mockup (New | Search | Back | View Switch) ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-xs">
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => router.push("/budgets/new")}
-            className="gap-1.5 font-medium shadow-xs"
-          >
-            <Plus className="size-4" />
-            New
-          </Button>
-        </div>
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredBudgets.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
 
-        {/* Center Search Input */}
-        <div className="relative min-w-60 flex-1 max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+  const paginatedBudgets = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return filteredBudgets.slice(start, start + PAGE_SIZE);
+  }, [filteredBudgets, safeCurrentPage]);
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      {/* ─── Top bar matching Master Data pattern ─── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button nativeButton={false} render={<Link href="/budgets/new" />}>
+          <Plus data-icon="inline-start" />
+          New
+        </Button>
+        <div className="relative min-w-48 flex-1 sm:max-w-sm">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search budgets, responsible, analytics..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search budgets, responsible, analytics..."
+            aria-label="Search budgets"
+            className="pl-9"
           />
         </div>
-
-        {/* Right Actions: Back & View Switchers */}
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-            className="gap-1.5 h-9 text-xs"
+            variant={viewMode === "list" ? "secondary" : "ghost"}
+            size="icon"
+            aria-label="List view"
+            aria-pressed={viewMode === "list"}
+            onClick={() => setViewMode("list")}
           >
-            <ArrowLeft className="size-3.5" />
-            Back
+            <List />
           </Button>
-
-          <div className="flex items-center rounded-lg border bg-muted/40 p-0.5">
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="icon"
-              className="size-8"
-              onClick={() => setViewMode("list")}
-              title="List View"
-            >
-              <List className="size-4" />
-            </Button>
-            <Button
-              variant={viewMode === "kanban" ? "secondary" : "ghost"}
-              size="icon"
-              className="size-8"
-              onClick={() => setViewMode("kanban")}
-              title="Kanban View"
-            >
-              <LayoutGrid className="size-4" />
-            </Button>
-          </div>
+          <Button
+            variant={viewMode === "kanban" ? "secondary" : "ghost"}
+            size="icon"
+            aria-label="Kanban view"
+            aria-pressed={viewMode === "kanban"}
+            onClick={() => setViewMode("kanban")}
+          >
+            <Columns3 />
+          </Button>
         </div>
       </div>
+
+      {/* ─── Heading row matching Master Data pattern ─── */}
+      <PageHeader
+        title="Budgets"
+        actions={
+          <>
+            {!isLoading && budgets.length > 0 ? (
+              <Badge variant="secondary">{budgets.length}</Badge>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href="/reports/budget" />}
+            >
+              Performance Report
+            </Button>
+          </>
+        }
+      />
 
       {/* ─── Main Content ─── */}
       {isLoading ? (
@@ -229,17 +244,18 @@ export function BudgetsView() {
             </div>
             {!search && (
               <Button
-                onClick={() => router.push("/budgets/new")}
-                className="mt-2 gap-2"
+                nativeButton={false}
+                render={<Link href="/budgets/new" />}
+                className="mt-2"
               >
-                <Plus className="size-4" />
+                <Plus data-icon="inline-start" />
                 Create Budget
               </Button>
             )}
           </CardContent>
         </Card>
       ) : viewMode === "list" ? (
-        /* ─── LIST VIEW matching wireframe ─── */
+        /* ─── LIST VIEW ─── */
         <Card className="overflow-hidden shadow-xs">
           <Table>
             <TableHeader className="bg-muted/40">
@@ -252,7 +268,7 @@ export function BudgetsView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredBudgets.map((b) => {
+              {paginatedBudgets.map((b) => {
                 const isConfirmedOrRevised =
                   b.status === "confirmed" || b.status === "revised";
 
@@ -298,9 +314,20 @@ export function BudgetsView() {
               })}
             </TableBody>
           </Table>
+
+          {!isLoading && filteredBudgets.length > 0 && (
+            <TablePagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={filteredBudgets.length}
+              pageSize={PAGE_SIZE}
+              itemLabel="budgets"
+              onPageChange={setCurrentPage}
+            />
+          )}
         </Card>
       ) : (
-        /* ─── KANBAN VIEW matching wireframe ─── */
+        /* ─── KANBAN VIEW ─── */
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredBudgets.map((b) => {
             const isConfirmedOrRevised =

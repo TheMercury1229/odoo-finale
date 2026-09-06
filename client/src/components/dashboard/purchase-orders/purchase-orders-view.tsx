@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth";
 import { DataTable } from "@/components/primitives/DataTable";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
+import { TablePagination } from "@/components/primitives/TablePagination";
 import { usePurchaseOrders } from "./purchase-orders-hooks";
 import type { PurchaseOrderStatus } from "./purchase-orders-api";
 import { Badge } from "@/components/ui/badge";
@@ -43,11 +44,16 @@ export function PurchaseOrdersView() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   const {
     data: purchaseOrders = [],
@@ -57,6 +63,15 @@ export function PurchaseOrdersView() {
     search,
     status: statusFilter,
   });
+
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(purchaseOrders.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedPurchaseOrders = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return purchaseOrders.slice(start, start + PAGE_SIZE);
+  }, [purchaseOrders, safeCurrentPage]);
 
   const statusTabs = [
     { id: "all", label: "All" },
@@ -168,7 +183,7 @@ export function PurchaseOrdersView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {purchaseOrders.map((po) => (
+              {paginatedPurchaseOrders.map((po) => (
                 <TableRow
                   key={po.id}
                   className="cursor-pointer transition-colors hover:bg-muted/50"
@@ -204,6 +219,17 @@ export function PurchaseOrdersView() {
               ))}
             </TableBody>
           </Table>
+
+          {!isLoading && purchaseOrders.length > 0 && (
+            <TablePagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={purchaseOrders.length}
+              pageSize={PAGE_SIZE}
+              itemLabel="purchase orders"
+              onPageChange={setCurrentPage}
+            />
+          )}
         </DataTable>
       )}
     </div>

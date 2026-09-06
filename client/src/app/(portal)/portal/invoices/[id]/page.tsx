@@ -67,7 +67,7 @@ export default function PortalInvoiceDetailPage() {
   const payments = invoice.payments || [];
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-6 max-w-5xl mx-auto pb-16">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 pb-16">
       {/* ─── Top Bar Actions ─── */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4 print:hidden">
         <div className="flex items-center gap-2">

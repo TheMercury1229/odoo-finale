@@ -1,11 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Loader2, Trash2, Upload } from "lucide-react";
+import { Camera, Loader2, X } from "lucide-react";
 
 import { useUploadThing } from "@/lib/uploadthing";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +44,7 @@ export function ContactAvatarUpload({
         toast.add({
           type: "success",
           title: "Image uploaded",
-          description: "Profile photo uploaded. Click Save Changes to apply.",
+          description: "Profile photo uploaded successfully.",
         });
       } else {
         console.error("No URL found in upload response:", res);
@@ -90,7 +89,7 @@ export function ContactAvatarUpload({
   const initials = getInitials(name || "Contact");
 
   return (
-    <div className="flex flex-col items-center gap-4 text-center">
+    <div className="relative shrink-0">
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -104,13 +103,14 @@ export function ContactAvatarUpload({
         }}
       />
 
-      {/* Interactive Avatar / Drop Zone */}
+      {/* Circular Avatar Trigger */}
       <div
+        role="button"
+        tabIndex={disabled || isUploading ? -1 : 0}
+        aria-label="Upload profile photo"
         className={cn(
-          "group relative flex size-28 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed transition-all duration-200",
-          isDragOver
-            ? "border-primary bg-primary/5 scale-105"
-            : "border-muted-foreground/25 hover:border-primary/60 bg-muted/30",
+          "group relative flex size-14 cursor-pointer select-none items-center justify-center rounded-full transition-transform duration-200",
+          isDragOver && "scale-105 ring-2 ring-primary",
           disabled && "cursor-not-allowed opacity-50",
         )}
         onDragOver={(e) => {
@@ -122,83 +122,62 @@ export function ContactAvatarUpload({
         onClick={() => {
           if (!disabled && !isUploading) fileInputRef.current?.click();
         }}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && !disabled && !isUploading) {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
         title="Click or drag image to change photo"
       >
-        <Avatar className="size-24 rounded-xl border shadow-sm">
+        <Avatar className="size-14 rounded-full border-2 border-border shadow-xs">
           {value ? (
             <AvatarImage
               src={value}
-              alt={name}
-              className="size-full rounded-xl object-cover"
+              alt={name || "Contact"}
+              className="size-full rounded-full object-cover"
             />
           ) : null}
-          <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 text-lg font-semibold text-primary">
+          <AvatarFallback className="rounded-full bg-muted/80 text-sm font-semibold text-muted-foreground">
             {initials}
           </AvatarFallback>
         </Avatar>
 
-        {/* Overlay on hover or when uploading */}
+        {/* Uploading Spinner Overlay */}
         {isUploading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-background/80 backdrop-blur-xs">
-            <Loader2 className="size-6 animate-spin text-primary" />
-            <span className="mt-1 text-[11px] font-medium text-foreground">
-              Uploading...
-            </span>
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/80 backdrop-blur-xs">
+            <Loader2 className="size-5 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-            <div className="flex flex-col items-center text-white">
-              <Camera className="size-5" />
-              <span className="text-[10px] font-medium">Change</span>
+          <>
+            {/* Hover Camera Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <Camera className="size-4 text-white" />
             </div>
-          </div>
-        )}
 
-        {/* Camera badge indicator at bottom-right */}
-        {!isUploading && (
-          <div className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-xs group-hover:border-primary group-hover:text-primary">
-            <Camera className="size-3.5" />
-          </div>
+            {/* Camera Badge at Bottom-Right */}
+            <div className="absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-xs group-hover:scale-110 transition-transform">
+              <Camera className="size-2.5" />
+            </div>
+          </>
         )}
       </div>
 
-      {/* Action Buttons & Guidance */}
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-xs"
-            disabled={disabled || isUploading}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {isUploading ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Upload className="size-3.5" />
-            )}
-            {value ? "Change Photo" : "Upload Photo"}
-          </Button>
-
-          {value ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-              disabled={disabled || isUploading}
-              onClick={() => onChange("")}
-            >
-              <Trash2 className="size-3.5" />
-              Remove
-            </Button>
-          ) : null}
-        </div>
-        <p className="text-[11px] text-muted-foreground">
-          PNG, JPG or WebP up to 8MB. Drag & drop supported.
-        </p>
-      </div>
+      {/* Remove Photo Button */}
+      {value && !isUploading && !disabled ? (
+        <button
+          type="button"
+          className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-background bg-destructive text-destructive-foreground opacity-0 shadow-xs transition-opacity hover:scale-110 hover:opacity-100 group-hover:opacity-100 focus:opacity-100"
+          title="Remove photo"
+          aria-label="Remove photo"
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange("");
+          }}
+        >
+          <X className="size-3" />
+        </button>
+      ) : null}
     </div>
   );
 }

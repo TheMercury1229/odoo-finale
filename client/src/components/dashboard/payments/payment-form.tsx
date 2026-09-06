@@ -9,14 +9,10 @@ import { z } from "zod";
 import {
   AlertCircle,
   Check,
-  Printer,
-  Send,
-  Settings,
   X,
 } from "lucide-react";
 
 import { useRecordPayment } from "./payments-hooks";
-import { triggerPrint } from "@/lib/print";
 import { useUserPermissions } from "@/lib/use-user-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,12 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 function formatCurrency(amount: number) {
   return `Rs. ${Number(amount || 0).toLocaleString("en-IN", {
@@ -173,84 +163,7 @@ export function PaymentForm({
   };
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-6 max-w-4xl mx-auto pb-16">
-      {/* ─── Top Bar Actions (Per Mockup) ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
-        {/* Left Action Group: Confirm, Cancel, Options Gear */}
-        <div className="flex items-center gap-2">
-          {(isPortal || canRecordPayment) && (
-            <Button
-              type="button"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-              onClick={handleSubmit(onSubmit)}
-              disabled={recordPaymentMutation.isPending}
-            >
-              <Check className="mr-1.5 size-4" />
-              {recordPaymentMutation.isPending ? "Confirming..." : "Confirm"}
-            </Button>
-          )}
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push(finalBackUrl)}
-            disabled={recordPaymentMutation.isPending}
-          >
-            Cancel
-          </Button>
-
-          {/* Options Gear Menu (Admin Only) */}
-          {!isPortal && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="size-9"
-                    title="Payment Options"
-                    disabled={recordPaymentMutation.isPending}
-                  />
-                }
-              >
-                <Settings className="size-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  onClick={() => triggerPrint({ title: "Payment Voucher" })}
-                  className="cursor-pointer"
-                >
-                  <Printer className="mr-2 size-4" />
-                  <span>1. Print Voucher</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    alert(
-                      "Payment voucher & journal notification will be sent to partner email.",
-                    );
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Send className="mr-2 size-4" />
-                  <span>2. Send</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-
-        {/* Right Breadcrumb / Status Indicator (Admin Only) */}
-        {!isPortal && (
-          <div className="flex items-center gap-1.5 rounded-lg border bg-muted/40 px-3 py-1 text-xs font-medium">
-            <span className="text-muted-foreground">Draft</span>
-            <span className="text-muted-foreground/60">→</span>
-            <span className="text-primary font-bold">Confirm</span>
-            <span className="text-muted-foreground/60">→</span>
-            <span className="text-muted-foreground">Cancelled</span>
-          </div>
-        )}
-      </div>
-
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 pb-16">
       {/* ─── Inline API Error Alert ─── */}
       {apiError && (
         <div className="flex items-start justify-between gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive text-sm font-medium">
@@ -271,7 +184,7 @@ export function PaymentForm({
       {/* ─── Main Payment Form Card ─── */}
       <Card className="border border-border/80 shadow-xs">
         <CardHeader className="pb-4 border-b border-border/60">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <CardTitle className="text-xl font-bold tracking-tight">
                 {isVendorBill ? "Bill Payment" : "Invoice Payment"}
@@ -290,12 +203,36 @@ export function PaymentForm({
               </p>
             </div>
 
-            {/* Target Balance summary */}
-            <div className="text-right bg-muted/40 rounded-lg px-4 py-2 border">
-              <div className="text-xs text-muted-foreground">Amount Due</div>
-              <div className="text-base font-mono font-bold text-primary">
-                {formatCurrency(finalAmountDue)}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Target Balance summary */}
+              <div className="text-right bg-muted/40 rounded-lg px-4 py-2 border">
+                <div className="text-xs text-muted-foreground">Amount Due</div>
+                <div className="text-base font-mono font-bold text-primary">
+                  {formatCurrency(finalAmountDue)}
+                </div>
               </div>
+
+              {/* Actions */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(finalBackUrl)}
+                disabled={recordPaymentMutation.isPending}
+              >
+                Cancel
+              </Button>
+
+              {(isPortal || canRecordPayment) && (
+                <Button
+                  type="button"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={recordPaymentMutation.isPending}
+                >
+                  <Check className="mr-1.5 size-4" />
+                  {recordPaymentMutation.isPending ? "Confirming..." : "Confirm"}
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>

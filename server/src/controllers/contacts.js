@@ -31,7 +31,7 @@ async function emailConflict(organizationId, email, excludedId) {
 
 export async function createContact(req, res, next) {
   try {
-    const { password, ...contactData } = req.validatedBody;
+    const { password = "12345678", ...contactData } = req.validatedBody;
     const values = {
       ...contactData,
       email: normalizeEmail(contactData.email),

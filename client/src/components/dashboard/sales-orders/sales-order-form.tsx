@@ -362,8 +362,8 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
     } catch (err: any) {
       setApiError(
         err?.response?.data?.error ||
-          err?.message ||
-          "Failed to save sales order",
+        err?.message ||
+        "Failed to save sales order",
       );
     } finally {
       setIsSubmitting(false);
@@ -377,14 +377,31 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
     try {
       setApiError(null);
       setIsSubmitting(true);
+
+      // Save latest edits before confirming
+      await handleSubmit(async (data) => {
+        const payload = {
+          customerId: data.customerId,
+          orderDate: data.orderDate,
+          lines: data.lines.map((l) => ({
+            productId: l.productId,
+            analyticAccountId: l.analyticAccountId,
+            quantity: Number(l.quantity),
+            unitPrice: Number(l.unitPrice),
+            taxAmount: Number(l.taxAmount || 0),
+          })),
+        };
+        await updateSalesOrder(initialSo.id, payload as any);
+      })();
+
       await confirmSalesOrder(initialSo.id);
       setConfirmDialogOpen(false);
       router.refresh();
     } catch (err: any) {
       setApiError(
         err?.response?.data?.error ||
-          err?.message ||
-          "Failed to confirm sales order",
+        err?.message ||
+        "Failed to confirm sales order",
       );
     } finally {
       setIsSubmitting(false);
@@ -404,8 +421,8 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
     } catch (err: any) {
       setApiError(
         err?.response?.data?.error ||
-          err?.message ||
-          "Failed to cancel sales order",
+        err?.message ||
+        "Failed to cancel sales order",
       );
     } finally {
       setIsSubmitting(false);
@@ -413,60 +430,49 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
   };
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-6 max-w-6xl mx-auto pb-16">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 pb-16">
       {/* ─── Top Bar Actions ─── */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
         {/* Left Action Buttons */}
-        <div className="flex items-center gap-2">
-          {canCreate && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (isExisting) {
-                  router.push("/sales-orders/new");
-                } else {
-                  window.location.reload();
-                }
-              }}
-              disabled={isSubmitting}
-            >
-              <Plus className="mr-1.5 size-4" />
-              New
-            </Button>
-          )}
-
-          {/* Confirm Button: Only for draft */}
-          {!isReadOnly && isExisting && canCreate && (
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
+          {/* On CREATE form (!isExisting): Only show "Save Draft" */}
+          {!isExisting && canCreate && (
             <Button
               type="button"
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-              onClick={() => setConfirmDialogOpen(true)}
-              disabled={isSubmitting}
-            >
-              <Check className="mr-1.5 size-4" />
-              Confirm
-            </Button>
-          )}
-
-          {/* Save Button for Draft */}
-          {!isReadOnly && canCreate && (
-            <Button
-              type="button"
-              variant="secondary"
               onClick={handleSubmit(onSubmit)}
               disabled={isSubmitting}
             >
-              {isSubmitting
-                ? "Saving..."
-                : isExisting
-                  ? "Save Changes"
-                  : "Save Draft"}
+              {isSubmitting ? "Saving..." : "Save Draft"}
             </Button>
           )}
 
-          {/* Generate Invoice: only when confirmed and no invoice exists yet */}
-          {status === "confirmed" && !initialSo?.hasInvoice && canCreate && (
+          {/* On EDIT/DETAIL form (isExisting): */}
+          {/* If status is "draft": show "Save Draft" and "Confirm" */}
+          {isExisting && status === "draft" && canCreate && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSubmit(onSubmit)}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Saving..." : "Save Draft"}
+              </Button>
+              <Button
+                type="button"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                onClick={() => setConfirmDialogOpen(true)}
+                disabled={isSubmitting}
+              >
+                <Check className="mr-1.5 size-4" />
+                Confirm
+              </Button>
+            </>
+          )}
+
+          {/* If status is "confirmed": show "Generate Invoice" (if no invoice exists yet) */}
+          {isExisting && status === "confirmed" && !initialSo?.hasInvoice && canCreate && (
             <Button
               type="button"
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
@@ -483,7 +489,7 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
           )}
 
           {/* If invoice already exists, show link */}
-          {status === "confirmed" && initialSo?.hasInvoice && (
+          {isExisting && status === "confirmed" && initialSo?.hasInvoice && (
             <Button
               type="button"
               variant="outline"
@@ -497,36 +503,10 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
               View Customer Invoice
             </Button>
           )}
-
-          {/* Cancel Button */}
-          {status !== "cancelled" &&
-            isExisting &&
-            canCreate &&
-            !initialSo?.hasInvoice && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => setCancelDialogOpen(true)}
-                disabled={isSubmitting}
-              >
-                <X className="mr-1.5 size-4" />
-                Cancel Order
-              </Button>
-            )}
         </div>
 
         {/* Right Navigation / Back */}
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push("/sales-orders")}
-            disabled={isSubmitting}
-          >
-            <ArrowLeft className="mr-1.5 size-4" />
-            Back to Sales Orders
-          </Button>
-        </div>
+
       </div>
 
       {/* ─── Inline API Error ─── */}
@@ -743,7 +723,7 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                               <div className="font-medium text-foreground py-2">
                                 {currentLine.productId
                                   ? productMap.get(currentLine.productId)
-                                      ?.name || "—"
+                                    ?.name || "—"
                                   : "—"}
                               </div>
                             ) : (
@@ -912,11 +892,10 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
                                   <button
                                     type="button"
                                     onClick={() => toggleTaxMode(index)}
-                                    title={`Current mode: ${currentMode}. Click to switch to ${
-                                      currentMode === "%"
-                                        ? "₹ (Amount)"
-                                        : "% (Rate)"
-                                    }`}
+                                    title={`Current mode: ${currentMode}. Click to switch to ${currentMode === "%"
+                                      ? "₹ (Amount)"
+                                      : "% (Rate)"
+                                      }`}
                                     className="px-2 py-1 text-xs font-bold rounded border bg-muted hover:bg-muted/80 text-foreground transition-colors shrink-0"
                                   >
                                     {currentMode}

@@ -40,7 +40,7 @@ export default function EditAnalyticAccountPage({ params }: PageProps) {
 
   if (isError || !account) {
     return (
-      <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 py-16 text-center">
+      <div className="mx-auto flex w-full  flex-col items-center justify-center gap-4 py-16 text-center">
         <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
           <Tags className="size-6" />
         </div>

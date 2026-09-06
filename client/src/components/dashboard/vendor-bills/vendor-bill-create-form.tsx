@@ -269,7 +269,7 @@ export function VendorBillCreateForm() {
   };
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-6 max-w-6xl mx-auto pb-16">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 pb-16">
       {/* ─── Top Bar Actions (Per Mockup) ─── */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
         {/* Left Action Group */}
@@ -296,15 +296,6 @@ export function VendorBillCreateForm() {
             disabled={isSubmitting}
           >
             Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push("/vendor-bills")}
-            disabled={isSubmitting}
-          >
-            <ArrowLeft className="mr-1.5 size-4" />
-            Back
           </Button>
         </div>
       </div>

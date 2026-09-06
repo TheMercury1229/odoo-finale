@@ -5,15 +5,14 @@ import axios from "axios";
 import {
   Archive,
   ArchiveRestore,
-  ArrowLeft,
   Check,
-  Home,
   Plus,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { PageHeader } from "@/components/primitives/PageHeader";
+import { TablePagination } from "@/components/primitives/TablePagination";
 
 import {
   type AccountType,
@@ -87,13 +86,18 @@ const selectionToAccountType: Record<SelectionKey, AccountType> = {
 };
 
 export function ChartOfAccountsView() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { isAdmin, canCreateMasterData } = useUserPermissions();
 
   const [isCreating, setIsCreating] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page on search or archive filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, showArchived]);
 
   // Form state
   const [accountName, setAccountName] = useState("");
@@ -114,6 +118,15 @@ export function ChartOfAccountsView() {
         search: searchQuery || undefined,
       }),
   });
+
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(accounts.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedAccounts = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return accounts.slice(start, start + PAGE_SIZE);
+  }, [accounts, safeCurrentPage]);
 
   const createMutation = useMutation({
     mutationFn: (payload: { name: string; type: AccountType }) =>
@@ -192,17 +205,6 @@ export function ChartOfAccountsView() {
     createMutation.mutate({ name: trimmed, type: mappedType });
   }
 
-  function handleBack() {
-    if (isCreating) {
-      setIsCreating(false);
-      setAccountName("");
-      setSelectedTypeKey("");
-      setFormError({});
-    } else {
-      router.back();
-    }
-  }
-
   // Type badge color resolver
   function getTypeBadge(type: AccountType) {
     switch (type) {
@@ -255,18 +257,45 @@ export function ChartOfAccountsView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      {/* ─── Top Action Bar matching wireframe ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
-        {/* Left Action Buttons: New, Confirm, Archived */}
-        <div className="flex flex-wrap items-center gap-2">
-          {canCreateMasterData && (
-            <>
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      {/* ─── Header matching Contacts/Products pattern ─── */}
+      <PageHeader
+        title="Chart of Accounts"
+        description="All these accounts are to be pre-configured. Each account is assigned an Account Type for treatment and financial reporting."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-48 sm:w-64">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search accounts..."
+                aria-label="Search accounts"
+                className="pl-9 h-9 text-xs"
+              />
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              aria-pressed={showArchived}
+              onClick={() => setShowArchived((prev) => !prev)}
+              className="gap-1.5 h-9 text-xs"
+            >
+              <Archive className="size-3.5" />
+              {showArchived ? "Hide archived" : "Show archived"}
+            </Button>
+
+            {!isLoading && accounts.length > 0 ? (
+              <Badge variant="secondary" className="h-7 px-2.5">
+                {accounts.length}
+              </Badge>
+            ) : null}
+
+            {canCreateMasterData && (
               <Button
-                type="button"
-                variant={isCreating ? "secondary" : "default"}
                 size="sm"
-                className="gap-1.5"
+                className="gap-1.5 h-9"
                 onClick={() => {
                   setIsCreating((prev) => !prev);
                   setFormError({});
@@ -275,100 +304,22 @@ export function ChartOfAccountsView() {
                 <Plus className="size-4" />
                 New
               </Button>
-
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                className="gap-1.5"
-                disabled={!isCreating || createMutation.isPending}
-                onClick={handleConfirm}
-              >
-                <Check className="size-4" />
-                {createMutation.isPending ? "Confirming..." : "Confirm"}
-              </Button>
-            </>
-          )}
-
-          <Button
-            type="button"
-            variant={showArchived ? "secondary" : "outline"}
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setShowArchived((prev) => !prev)}
-          >
-            <Archive className="size-4" />
-            {showArchived ? "Archived (Active)" : "Archived"}
-          </Button>
-        </div>
-
-        {/* Right Action Buttons: Home, Back */}
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => router.push("/")}
-          >
-            <Home className="size-4" />
-            Home
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="size-4" />
-            Back
-          </Button>
-        </div>
-      </div>
-
-      {/* ─── Header title & note from wireframe ─── */}
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Chart of Accounts (List View)
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            All these accounts are to be pre-configured. Each account is assigned an
-            Account Type for treatment and financial reporting.
-          </p>
-        </div>
-
-        {/* Search input */}
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search accounts..."
-            className="h-8 pl-8 text-xs"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
+            )}
+          </div>
+        }
+      />
 
       {/* ─── "When clicking on new" Form Card ─── */}
       {isCreating && (
         <Card className="border-primary/40 bg-card shadow-sm animate-in fade-in-50 slide-in-from-top-2 duration-200">
           <CardHeader className="border-b pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-semibold">
-                  New Account
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Provide account details and assign an Account Type
-                </CardDescription>
-              </div>
-              <Badge variant="outline" className="text-xs">
-                Draft
-              </Badge>
+            <div>
+              <CardTitle className="text-base font-semibold">
+                New Account
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Provide account details and assign an Account Type
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="pt-5">
@@ -476,7 +427,7 @@ export function ChartOfAccountsView() {
                 onClick={handleConfirm}
               >
                 <Check className="size-4" />
-                {createMutation.isPending ? "Confirming..." : "Confirm & Save"}
+                {createMutation.isPending ? "Creating..." : "Create Account"}
               </Button>
             </div>
           </CardContent>
@@ -520,7 +471,7 @@ export function ChartOfAccountsView() {
                   </TableCell>
                 </TableRow>
               ) : (
-                accounts.map((account) => (
+                paginatedAccounts.map((account) => (
                   <TableRow
                     key={account.id}
                     className={`transition-colors ${
@@ -565,6 +516,17 @@ export function ChartOfAccountsView() {
               )}
             </TableBody>
           </Table>
+
+          {!isLoading && accounts.length > 0 && (
+            <TablePagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={accounts.length}
+              pageSize={PAGE_SIZE}
+              itemLabel="accounts"
+              onPageChange={setCurrentPage}
+            />
+          )}
         </CardContent>
       </Card>
 

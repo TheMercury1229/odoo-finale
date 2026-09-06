@@ -27,7 +27,6 @@ import {
   setProductArchived,
   updateProduct,
 } from "@/components/dashboard/products/products-api";
-import { formatPrice } from "@/components/dashboard/products/product-utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,8 +60,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { authClient } from "@/lib/auth";
 import { useUserPermissions } from "@/lib/use-user-permissions";
 import { toast } from "@/components/ui/toast";
 
@@ -100,8 +97,8 @@ function toPayload(values: ProductFormValues): ProductPayload {
   return {
     name: values.name.trim(),
     type: values.type,
-    salesPrice: values.salesPrice,
-    costPrice: values.costPrice,
+    salesPrice: Number(values.salesPrice),
+    costPrice: Number(values.costPrice),
     category: values.category?.trim() || undefined,
   };
 }
@@ -140,7 +137,7 @@ export function ProductForm({ product }: ProductFormProps) {
         title: isEditing ? "Product updated" : "Product created",
         description: isEditing
           ? "Product details have been updated."
-          : "Product has been created successfully.",
+          : "New product has been added to the catalog.",
       });
       router.push("/products");
     },
@@ -173,31 +170,34 @@ export function ProductForm({ product }: ProductFormProps) {
       toast.add({
         type: "success",
         title: product?.isArchived ? "Product restored" : "Product archived",
+        description: product?.isArchived
+          ? "Product restored and available in order lines."
+          : "Product archived and hidden from order line pickers.",
       });
       router.push("/products");
     },
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <div className="mx-auto flex w-full  flex-col gap-6">
       {/* ─── Top action bar ─── */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => router.back()}
-            disabled={saveMutation.isPending || archiveMutation.isPending}
-          >
-            <ArrowLeft className="size-4" />
-            Back
-          </Button>
+
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">
-              {isEditing ? product?.name : "New Product"}
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-lg font-semibold tracking-tight">
+                {isEditing ? product?.name : "New Product"}
+              </h1>
+              {isEditing && (
+                <Badge
+                  variant={product?.isArchived ? "destructive" : "secondary"}
+                  className="text-xs font-normal capitalize"
+                >
+                  {product?.isArchived ? "Archived" : "Active"}
+                </Badge>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               {isEditing
                 ? "Update product information and pricing"
@@ -272,183 +272,128 @@ export function ProductForm({ product }: ProductFormProps) {
           if (saveMutation.isPending || archiveMutation.isPending) return;
           saveMutation.mutate(values);
         })}
-        className="grid gap-6 lg:grid-cols-[1fr_18rem]"
+        className="flex flex-col gap-6"
       >
-        {/* ─── Left Column: Details ─── */}
-        <div className="flex flex-col gap-6">
-          {/* Card 1: General Information */}
-          <Card>
-            <CardHeader className="border-b pb-4">
-              <div className="flex items-center gap-2">
-                <Package className="size-4 text-primary" />
-                <CardTitle>General Information</CardTitle>
-              </div>
-              <CardDescription>
-                Basic product details and classification
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-5">
-              <FieldGroup>
-                <Field data-invalid={!!form.formState.errors.name}>
-                  <FieldLabel htmlFor="name">Product Name *</FieldLabel>
-                  <Input
-                    id="name"
-                    placeholder="e.g. Office Chair, Wooden Table"
-                    {...form.register("name")}
-                    aria-invalid={!!form.formState.errors.name}
+        {/* Card 1: General Information */}
+        <Card>
+          <CardHeader className="border-b pb-4">
+            <div className="flex items-center gap-2">
+              <Package className="size-4 text-primary" />
+              <CardTitle>General Information</CardTitle>
+            </div>
+            <CardDescription>
+              Basic product details and classification
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-5">
+            <FieldGroup>
+              <Field data-invalid={!!form.formState.errors.name}>
+                <FieldLabel htmlFor="name">Product Name *</FieldLabel>
+                <Input
+                  id="name"
+                  placeholder="e.g. Office Chair, Wooden Table"
+                  {...form.register("name")}
+                  aria-invalid={!!form.formState.errors.name}
+                />
+                <FieldError errors={[form.formState.errors.name]} />
+              </Field>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field data-invalid={!!form.formState.errors.type}>
+                  <FieldLabel htmlFor="type">Product Type *</FieldLabel>
+                  <Controller
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(value) =>
+                          field.onChange(value as ProductType)
+                        }
+                      >
+                        <SelectTrigger
+                          id="type"
+                          aria-invalid={!!form.formState.errors.type}
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="goods">Goods</SelectItem>
+                          <SelectItem value="service">Service</SelectItem>
+                          <SelectItem value="combo">Combo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
-                  <FieldError errors={[form.formState.errors.name]} />
+                  <FieldError errors={[form.formState.errors.type]} />
                 </Field>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field data-invalid={!!form.formState.errors.type}>
-                    <FieldLabel htmlFor="type">Product Type *</FieldLabel>
-                    <Controller
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={(value) =>
-                            field.onChange(value as ProductType)
-                          }
-                        >
-                          <SelectTrigger
-                            id="type"
-                            aria-invalid={!!form.formState.errors.type}
-                            className="w-full"
-                          >
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="goods">Goods</SelectItem>
-                            <SelectItem value="service">Service</SelectItem>
-                            <SelectItem value="combo">Combo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    <FieldError errors={[form.formState.errors.type]} />
-                  </Field>
+                <Field data-invalid={!!form.formState.errors.category}>
+                  <FieldLabel
+                    htmlFor="category"
+                    className="flex items-center gap-1.5"
+                  >
+                    <Tag className="size-3.5 text-muted-foreground" />
+                    Category
+                  </FieldLabel>
+                  <Input
+                    id="category"
+                    placeholder="e.g. Furniture, Electronics"
+                    {...form.register("category")}
+                  />
+                  <FieldError errors={[form.formState.errors.category]} />
+                </Field>
+              </div>
+            </FieldGroup>
+          </CardContent>
+        </Card>
 
-                  <Field data-invalid={!!form.formState.errors.category}>
-                    <FieldLabel
-                      htmlFor="category"
-                      className="flex items-center gap-1.5"
-                    >
-                      <Tag className="size-3.5 text-muted-foreground" />
-                      Category
-                    </FieldLabel>
-                    <Input
-                      id="category"
-                      placeholder="e.g. Furniture, Electronics"
-                      {...form.register("category")}
-                    />
-                    <FieldError errors={[form.formState.errors.category]} />
-                  </Field>
-                </div>
-              </FieldGroup>
-            </CardContent>
-          </Card>
+        {/* Card 2: Pricing */}
+        <Card>
+          <CardHeader className="border-b pb-4">
+            <div className="flex items-center gap-2">
+              <IndianRupee className="size-4 text-primary" />
+              <CardTitle>Pricing</CardTitle>
+            </div>
+            <CardDescription>
+              Set the sales and cost prices for this product
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-5">
+            <FieldGroup>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field data-invalid={!!form.formState.errors.salesPrice}>
+                  <FieldLabel htmlFor="salesPrice">Sales Price *</FieldLabel>
+                  <Input
+                    id="salesPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    {...form.register("salesPrice")}
+                    aria-invalid={!!form.formState.errors.salesPrice}
+                  />
+                  <FieldError errors={[form.formState.errors.salesPrice]} />
+                </Field>
 
-          {/* Card 2: Pricing */}
-          <Card>
-            <CardHeader className="border-b pb-4">
-              <div className="flex items-center gap-2">
-                <IndianRupee className="size-4 text-primary" />
-                <CardTitle>Pricing</CardTitle>
+                <Field data-invalid={!!form.formState.errors.costPrice}>
+                  <FieldLabel htmlFor="costPrice">Cost Price *</FieldLabel>
+                  <Input
+                    id="costPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    {...form.register("costPrice")}
+                    aria-invalid={!!form.formState.errors.costPrice}
+                  />
+                  <FieldError errors={[form.formState.errors.costPrice]} />
+                </Field>
               </div>
-              <CardDescription>
-                Set the sales and cost prices for this product
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-5">
-              <FieldGroup>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field data-invalid={!!form.formState.errors.salesPrice}>
-                    <FieldLabel htmlFor="salesPrice">Sales Price *</FieldLabel>
-                    <Input
-                      id="salesPrice"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      {...form.register("salesPrice")}
-                      aria-invalid={!!form.formState.errors.salesPrice}
-                    />
-                    <FieldError errors={[form.formState.errors.salesPrice]} />
-                  </Field>
-
-                  <Field data-invalid={!!form.formState.errors.costPrice}>
-                    <FieldLabel htmlFor="costPrice">Cost Price *</FieldLabel>
-                    <Input
-                      id="costPrice"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      {...form.register("costPrice")}
-                      aria-invalid={!!form.formState.errors.costPrice}
-                    />
-                    <FieldError errors={[form.formState.errors.costPrice]} />
-                  </Field>
-                </div>
-              </FieldGroup>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ─── Right Column: Summary ─── */}
-        <div className="flex flex-col gap-6">
-          <Card className="bg-muted/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">
-                Summary & Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-xs text-muted-foreground">
-              <div className="flex items-center justify-between">
-                <span>Type</span>
-                <Badge variant="outline" className="capitalize text-xs">
-                  {form.watch("type")}
-                </Badge>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span>Sales Price</span>
-                <span className="font-medium tabular-nums text-foreground">
-                  {form.watch("salesPrice")
-                    ? formatPrice(form.watch("salesPrice"))
-                    : "—"}
-                </span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span>Cost Price</span>
-                <span className="tabular-nums">
-                  {form.watch("costPrice")
-                    ? formatPrice(form.watch("costPrice"))
-                    : "—"}
-                </span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span>Category</span>
-                <span>{form.watch("category") || "—"}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span>Status</span>
-                <Badge
-                  variant={product?.isArchived ? "destructive" : "outline"}
-                  className="text-xs"
-                >
-                  {product?.isArchived ? "Archived" : "Active"}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </FieldGroup>
+          </CardContent>
+        </Card>
       </form>
 
       {/* ─── Archive Confirmation Dialog ─── */}

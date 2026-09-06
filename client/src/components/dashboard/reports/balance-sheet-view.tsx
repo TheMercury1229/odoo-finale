@@ -4,18 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
-  ArrowLeft,
   Calendar,
   CheckCircle2,
   Printer,
+  RefreshCw,
   Scale,
 } from "lucide-react";
 
 import { useBalanceSheet } from "./reports-hooks";
 import { formatCurrency, type ReportAccountLine } from "./reports-api";
+import { ReportsNavTabs } from "./reports-nav-tabs";
 import { triggerPrint } from "@/lib/print";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -39,33 +40,27 @@ function SectionTable({
   accounts,
   totalLabel,
   totalAmount,
-  emptyMessage,
 }: {
   title: string;
   accounts: ReportAccountLine[];
   totalLabel: string;
   totalAmount: number;
-  emptyMessage?: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between px-1">
-        <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+      <div className="flex items-center justify-between border-b pb-1.5">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </h3>
-        <span className="text-xs font-medium text-muted-foreground">
-          {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
-        </span>
       </div>
-
-      <div className="overflow-hidden rounded-md border">
+      <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="font-medium text-foreground">
-                Account Name
+              <TableHead className="font-semibold text-foreground">
+                Account
               </TableHead>
-              <TableHead className="text-right font-medium text-foreground">
+              <TableHead className="text-right font-semibold text-foreground">
                 Balance
               </TableHead>
             </TableRow>
@@ -75,9 +70,9 @@ function SectionTable({
               <TableRow>
                 <TableCell
                   colSpan={2}
-                  className="py-4 text-center text-sm text-muted-foreground"
+                  className="py-6 text-center text-sm text-muted-foreground"
                 >
-                  {emptyMessage || "No accounts to display"}
+                  No accounts with balances in this category.
                 </TableCell>
               </TableRow>
             ) : (
@@ -111,7 +106,7 @@ export function BalanceSheetView() {
   const router = useRouter();
   const [asOf, setAsOf] = useState(getTodayString);
 
-  const { data, isLoading, isError, error, refetch } = useBalanceSheet({
+  const { data, isLoading, isFetching, isError, error, refetch } = useBalanceSheet({
     asOf: asOf || undefined,
   });
 
@@ -131,35 +126,27 @@ export function BalanceSheetView() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      {/* ─── Top Action Bar (Print on Left, Date in Center, Back on Right) ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-4 shadow-xs print:hidden">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            onClick={handlePrint}
-            className="gap-2 font-medium"
-          >
-            <Printer className="size-4" />
-            Print
-          </Button>
-        </div>
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      {/* ─── Reports Section Navigation Tabs ─── */}
+      <ReportsNavTabs />
 
-        <div className="flex items-center gap-3">
+      {/* ─── Top Action & Filter Bar (Screen Only) ─── */}
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-xs print:hidden">
+        <div className="flex items-center gap-2">
           <Label
             htmlFor="asOfDate"
-            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap"
           >
-            As Of
+            As Of Date
           </Label>
           <div className="relative flex items-center">
-            <Calendar className="pointer-events-none absolute left-2.5 size-4 text-muted-foreground" />
+            <Calendar className="pointer-events-none absolute left-2.5 size-3.5 text-muted-foreground" />
             <Input
               id="asOfDate"
               type="date"
               value={asOf}
               onChange={(e) => setAsOf(e.target.value)}
-              className="h-9 w-44 pl-9 text-sm"
+              className="h-9 w-44 pl-8 text-xs font-medium"
             />
           </div>
         </div>
@@ -167,60 +154,61 @@ export function BalanceSheetView() {
         <div className="flex items-center gap-2">
           <Button
             type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            className="gap-2 font-medium"
+            onClick={handlePrint}
+            className="gap-2 font-medium bg-primary text-primary-foreground h-9"
           >
-            <ArrowLeft className="size-4" />
-            Back
+            <Printer className="size-4" />
+            Print Report
           </Button>
         </div>
       </div>
 
-      {/* ─── Printable / Main Report Card ─── */}
-      <Card className="border shadow-xs print:border-none print:shadow-none">
-        <CardHeader className="border-b pb-4">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Scale className="size-5 text-primary print:hidden" />
-                <CardTitle className="text-xl font-bold tracking-tight sm:text-2xl">
-                  Balance Sheet
-                </CardTitle>
-              </div>
-              <p className="text-xs text-muted-foreground sm:text-sm">
-                Statement of financial position as of{" "}
+      {/* ─── Unified Document Header (Screen & Print) ─── */}
+      <div className="flex min-w-0 flex-col gap-1 border-b pb-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Scale className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="wrap-break-word text-2xl font-bold tracking-tight text-foreground">
+                Balance Sheet
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                Urban Furniture • Statement of Financial Position as of{" "}
                 <span className="font-semibold text-foreground">
                   {data?.asOf || asOf}
                 </span>
               </p>
             </div>
-
-            {/* In-Balance / Out-of-Balance Status Badge */}
-            {!isLoading && data && (
-              <div className="mt-2 sm:mt-0">
-                {isBalanced ? (
-                  <Badge
-                    variant="outline"
-                    className="gap-1.5 border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-400"
-                  >
-                    <CheckCircle2 className="size-3.5" />
-                    Balanced
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="destructive"
-                    className="gap-1.5 px-3 py-1 font-medium shadow-xs"
-                  >
-                    <AlertTriangle className="size-3.5" />
-                    Mismatch: Out of balance by {formatCurrency(difference)}
-                  </Badge>
-                )}
-              </div>
-            )}
           </div>
-        </CardHeader>
 
+          {!isLoading && data && (
+            <div className="shrink-0 text-right flex items-center gap-3">
+              {isBalanced ? (
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-400"
+                >
+                  <CheckCircle2 className="size-3.5" />
+                  Balanced
+                </Badge>
+              ) : (
+                <Badge
+                  variant="destructive"
+                  className="gap-1.5 px-3 py-1 font-medium shadow-xs"
+                >
+                  <AlertTriangle className="size-3.5" />
+                  Mismatch: Out of balance by {formatCurrency(difference)}
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Main Statement Content ─── */}
+      <Card className="border border-border/80 shadow-xs print:border-none print:shadow-none overflow-hidden">
         <CardContent className="flex flex-col gap-6 p-6">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -249,80 +237,61 @@ export function BalanceSheetView() {
             </div>
           ) : !data ? null : (
             <>
-              {/* ─── Two-Column Layout (Assets on Left, Liabilities & Capital on Right) ─── */}
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {/* Left Column: Assets */}
-                <div className="flex flex-col gap-6">
-                  <SectionTable
-                    title="Assets"
-                    accounts={data.assets}
-                    totalLabel="Total Assets"
-                    totalAmount={totalAssets}
-                    emptyMessage="No asset accounts with balances"
-                  />
-                </div>
+              {/* ASSETS SECTION */}
+              <SectionTable
+                title="Assets"
+                accounts={data.assets}
+                totalLabel="Total Assets"
+                totalAmount={totalAssets}
+              />
 
-                {/* Right Column: Liabilities & Capital */}
-                <div className="flex flex-col gap-6">
-                  <SectionTable
-                    title="Liabilities"
-                    accounts={data.liabilities}
-                    totalLabel="Total Liabilities"
-                    totalAmount={totalLiabilities}
-                    emptyMessage="No liability accounts with balances"
-                  />
+              {/* LIABILITIES SECTION */}
+              <SectionTable
+                title="Liabilities"
+                accounts={data.liabilities}
+                totalLabel="Total Liabilities"
+                totalAmount={totalLiabilities}
+              />
 
-                  <SectionTable
-                    title="Capital / Equity"
-                    accounts={data.capital}
-                    totalLabel="Total Capital"
-                    totalAmount={totalCapital}
-                    emptyMessage="No capital accounts with balances"
-                  />
-                </div>
-              </div>
+              {/* CAPITAL & EQUITY SECTION */}
+              <SectionTable
+                title="Capital & Equity"
+                accounts={data.capital}
+                totalLabel="Total Capital & Equity"
+                totalAmount={totalCapital}
+              />
 
-              {/* ─── Bottom Summary & Verification ─── */}
-              <div className="mt-2 rounded-lg border bg-muted/30 p-4 sm:p-5">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:divide-x sm:divide-border/60">
-                  {/* Total Assets */}
-                  <div className="flex flex-col gap-1 sm:pr-4">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Total Assets
+              {/* GRAND SUMMARY AUDIT COMPARISON */}
+              <div className="mt-2 rounded-lg border border-border/80 bg-muted/20 p-4">
+                <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Accounting Equation Verification (Assets = Liabilities +
+                  Capital)
+                </h4>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex items-center justify-between rounded-md border bg-card p-3 shadow-2xs">
+                    <span className="text-sm font-medium text-foreground">
+                      Total Assets:
                     </span>
-                    <span className="font-mono text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                    <span className="font-mono text-base font-bold text-foreground">
                       {formatCurrency(totalAssets)}
                     </span>
                   </div>
-
-                  {/* Total Liabilities + Capital */}
-                  <div className="flex flex-col gap-1 sm:pl-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Total Liabilities & Capital
-                      </span>
-                      {!isBalanced && (
-                        <span className="text-xs font-medium text-destructive">
-                          (Diff: {formatCurrency(difference)})
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-mono text-xl font-bold tabular-nums text-foreground sm:text-2xl">
+                  <div className="flex items-center justify-between rounded-md border bg-card p-3 shadow-2xs">
+                    <span className="text-sm font-medium text-foreground">
+                      Total Liabilities + Capital:
+                    </span>
+                    <span className="font-mono text-base font-bold text-foreground">
                       {formatCurrency(totalLiabilitiesAndCapital)}
                     </span>
                   </div>
                 </div>
 
-                {/* Defensive Warning Badge when out of balance */}
                 {!isBalanced && (
-                  <div className="mt-4 flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                  <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-destructive">
                     <AlertTriangle className="size-4 shrink-0" />
                     <span>
-                      <strong>Warning:</strong> Total Assets (
-                      {formatCurrency(totalAssets)}) do not equal Total
-                      Liabilities + Capital (
-                      {formatCurrency(totalLiabilitiesAndCapital)}). Difference:{" "}
-                      {formatCurrency(difference)}.
+                      Difference: {formatCurrency(difference)}. Check unposted
+                      journal entries or non-balancing manual postings.
                     </span>
                   </div>
                 )}

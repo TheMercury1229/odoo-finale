@@ -83,7 +83,7 @@ export function CustomerInvoiceDetailView({
   };
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-6 max-w-6xl mx-auto pb-16">
+    <div className="flex min-w-0 w-full flex-1 flex-col gap-6 pb-16">
       {/* ─── Top Bar Actions (Screen Only) ─── */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4 print:hidden">
         {/* Left Action Group: Pay, Print */}

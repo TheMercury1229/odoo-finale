@@ -17,10 +17,11 @@ export const createContactSchema = z
     ...contactFields,
     // Email is required because every contact must have a portal user account.
     email: z.email("Email is required and must be valid"),
-    // Password is mandatory — a portal user is always created for each contact.
+    // Password is auto-generated server-side if not provided
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters"),
+      .min(8, "Password must be at least 8 characters")
+      .optional(),
   })
   .strict();
 export const updateContactSchema = z

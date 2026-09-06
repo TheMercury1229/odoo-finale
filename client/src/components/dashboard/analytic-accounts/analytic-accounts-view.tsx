@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -19,6 +19,7 @@ import {
   fetchAnalyticAccounts,
   setAnalyticAccountArchived,
 } from "./analytic-accounts-api";
+import { TablePagination } from "@/components/primitives/TablePagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,6 +81,12 @@ export function AnalyticAccountsView() {
   const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, typeFilter, showArchived]);
 
   const [targetAccount, setTargetAccount] = useState<AnalyticAccount | null>(
     null,
@@ -94,6 +101,15 @@ export function AnalyticAccountsView() {
         type: typeFilter === "all" ? undefined : typeFilter,
       }),
   });
+
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(accounts.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedAccounts = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return accounts.slice(start, start + PAGE_SIZE);
+  }, [accounts, safeCurrentPage]);
 
   const archiveMutation = useMutation({
     mutationFn: ({ id, archived }: { id: string; archived: boolean }) =>
@@ -121,7 +137,7 @@ export function AnalyticAccountsView() {
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
       {/* ─── Top Header ─── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
@@ -261,7 +277,7 @@ export function AnalyticAccountsView() {
                 </TableCell>
               </TableRow>
             ) : (
-              accounts.map((acc) => (
+              paginatedAccounts.map((acc) => (
                 <TableRow
                   key={acc.id}
                   className="cursor-pointer hover:bg-muted/40 transition-colors"
@@ -348,6 +364,17 @@ export function AnalyticAccountsView() {
             )}
           </TableBody>
         </Table>
+
+        {!isLoading && accounts.length > 0 && (
+          <TablePagination
+            currentPage={safeCurrentPage}
+            totalPages={totalPages}
+            totalItems={accounts.length}
+            pageSize={PAGE_SIZE}
+            itemLabel="analytic accounts"
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
 
       {/* ─── Archive / Unarchive Confirmation Dialog ─── */}

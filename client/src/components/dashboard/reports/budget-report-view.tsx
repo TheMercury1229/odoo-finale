@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
-  ArrowLeft,
   Calendar,
   PiggyBank,
   Printer,
+  RefreshCw,
   Target,
   TrendingDown,
   TrendingUp,
@@ -16,6 +16,7 @@ import {
 
 import { useBudgetReport } from "./reports-hooks";
 import { formatCurrency, type BudgetReportItem } from "./reports-api";
+import { ReportsNavTabs } from "./reports-nav-tabs";
 import { formatDate } from "@/lib/utils";
 import { triggerPrint } from "@/lib/print";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +52,9 @@ export function BudgetReportView() {
   const {
     data: report = [],
     isLoading,
+    isFetching,
     isError,
+    refetch,
   } = useBudgetReport({
     asOf: asOf || undefined,
   });
@@ -68,48 +71,52 @@ export function BudgetReportView() {
   };
 
   return (
-    <div className="mx-auto flex min-w-0 w-full max-w-6xl flex-col gap-6 overflow-x-hidden">
-      {/* ─── Top Action Bar ─── */}
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-4 shadow-xs print:hidden">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            onClick={handlePrint}
-            className="gap-2 font-medium"
-          >
-            <Printer className="size-4" />
-            Print Report
-          </Button>
-        </div>
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      {/* ─── Reports Section Navigation Tabs ─── */}
+      <ReportsNavTabs />
 
-        <div className="flex min-w-0 flex-wrap items-center gap-3">
+      {/* ─── Top Action & Filter Bar (Screen Only) ─── */}
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-xs print:hidden">
+        <div className="flex items-center gap-2">
           <Label
             htmlFor="asOfDate"
-            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap"
           >
-            As Of
+            As Of Date
           </Label>
           <div className="relative flex items-center">
-            <Calendar className="pointer-events-none absolute left-2.5 size-4 text-muted-foreground" />
+            <Calendar className="pointer-events-none absolute left-2.5 size-3.5 text-muted-foreground" />
             <Input
               id="asOfDate"
               type="date"
               value={asOf}
               onChange={(e) => setAsOf(e.target.value)}
-              className="h-9 w-44 pl-9 text-sm"
+              className="h-9 w-44 pl-8 text-xs font-medium"
             />
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push("/budgets")}
-          className="shrink-0 gap-2"
-        >
-          <ArrowLeft className="size-4" />
-          View Budgets
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/budgets")}
+            className="gap-1.5 h-9"
+          >
+            <PiggyBank className="size-3.5" />
+            View Budgets
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handlePrint}
+            className="gap-2 font-medium bg-primary text-primary-foreground h-9"
+          >
+            <Printer className="size-4" />
+            Print Report
+          </Button>
+        </div>
       </div>
 
       {/* ─── Printable Document Header ─── */}
@@ -190,9 +197,8 @@ export function BudgetReportView() {
           </CardHeader>
           <CardContent>
             <div
-              className={`text-2xl font-bold font-mono tracking-tight ${
-                totalVariance < 0 ? "text-destructive" : "text-emerald-600"
-              }`}
+              className={`text-2xl font-bold font-mono tracking-tight ${totalVariance < 0 ? "text-destructive" : "text-emerald-600"
+                }`}
             >
               <span className="break-all text-xl sm:text-2xl">
                 {formatCurrency(totalVariance)}
@@ -288,11 +294,10 @@ export function BudgetReportView() {
                     <TableRow
                       key={b.budgetId}
                       onClick={() => router.push(`/budgets/${b.budgetId}`)}
-                      className={`cursor-pointer transition-colors hover:bg-muted/30 ${
-                        isOverBudget
+                      className={`cursor-pointer transition-colors hover:bg-muted/30 ${isOverBudget
                           ? "bg-destructive/5 hover:bg-destructive/10 border-l-4 border-l-destructive"
                           : ""
-                      }`}
+                        }`}
                     >
                       <TableCell className="font-medium text-foreground">
                         <div className="flex flex-col">
@@ -320,11 +325,10 @@ export function BudgetReportView() {
                       </TableCell>
 
                       <TableCell
-                        className={`text-right font-mono text-sm tabular-nums font-medium ${
-                          b.variance < 0
+                        className={`text-right font-mono text-sm tabular-nums font-medium ${b.variance < 0
                             ? "text-destructive"
                             : "text-foreground"
-                        }`}
+                          }`}
                       >
                         {formatCurrency(b.variance)}
                       </TableCell>
@@ -369,9 +373,8 @@ export function BudgetReportView() {
                     {formatCurrency(totalActual)}
                   </TableCell>
                   <TableCell
-                    className={`text-right font-mono tabular-nums ${
-                      totalVariance < 0 ? "text-destructive" : "text-foreground"
-                    }`}
+                    className={`text-right font-mono tabular-nums ${totalVariance < 0 ? "text-destructive" : "text-foreground"
+                      }`}
                   >
                     {formatCurrency(totalVariance)}
                   </TableCell>
@@ -425,9 +428,8 @@ export function BudgetReportView() {
               <Card
                 key={b.budgetId}
                 onClick={() => router.push(`/budgets/${b.budgetId}`)}
-                className={`cursor-pointer transition-colors hover:border-primary/50 ${
-                  isOverBudget ? "border-destructive/40" : ""
-                }`}
+                className={`cursor-pointer transition-colors hover:border-primary/50 ${isOverBudget ? "border-destructive/40" : ""
+                  }`}
               >
                 <CardHeader className="gap-2 pb-3">
                   <div className="flex min-w-0 items-start justify-between gap-3">
@@ -482,9 +484,8 @@ export function BudgetReportView() {
                   <div className="col-span-2 border-t pt-3">
                     <p className="text-xs text-muted-foreground">Variance</p>
                     <p
-                      className={`mt-1 font-mono font-medium tabular-nums ${
-                        b.variance < 0 ? "text-destructive" : "text-foreground"
-                      }`}
+                      className={`mt-1 font-mono font-medium tabular-nums ${b.variance < 0 ? "text-destructive" : "text-foreground"
+                        }`}
                     >
                       {formatCurrency(b.variance)}
                     </p>

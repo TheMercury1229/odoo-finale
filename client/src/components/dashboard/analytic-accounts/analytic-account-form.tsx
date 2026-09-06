@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, CheckCircle2, Layers, PiggyBank, Plus, Save, Tags } from "lucide-react";
+import { CheckCircle2, Layers, Tags } from "lucide-react";
 import axios from "axios";
 
 import {
@@ -130,71 +130,59 @@ export function AnalyticAccountForm({ initialData }: AnalyticAccountFormProps) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-2 sm:p-4">
-      {/* ─── Top Bar matching Mockup (New | Confirm/Save | Back) ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-xs">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/analytic-accounts/new")}
-            className="gap-1.5"
-          >
-            <Plus className="size-3.5" />
-            New
-          </Button>
-
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting || mutation.isPending}
-            className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-xs"
-          >
-            {isSubmitting || mutation.isPending ? (
-              <Spinner className="size-3.5" />
-            ) : (
-              <CheckCircle2 className="size-3.5" />
-            )}
-            Confirm
-          </Button>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => router.push("/analytic-accounts")}
-          className="gap-1.5"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back
-        </Button>
-      </div>
-
+    <div className="mx-auto flex w-full flex-col gap-6 p-2 sm:p-4">
       {/* ─── Form Card ─── */}
       <Card className="shadow-xs">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Tags className="size-5" />
+        <CardHeader className="border-b pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Tags className="size-5" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">
+                  {isEditing ? "Edit Analytic Account" : "New Analytic Account"}
+                </CardTitle>
+                <CardDescription>
+                  {isEditing
+                    ? "Update name or classification for this cost center or income source."
+                    : "Track revenue or expenses against projects, departments, or contracts."}
+                </CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-xl">
-                {isEditing ? "Edit Analytic Account" : "New Analytic Account"}
-              </CardTitle>
-              <CardDescription>
-                {isEditing
-                  ? "Update name or classification for this cost center or income source."
-                  : "Track revenue or expenses against projects, departments, or contracts."}
-              </CardDescription>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/analytic-accounts")}
+                disabled={isSubmitting || mutation.isPending}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="submit"
+                form="analytic-account-form"
+                size="sm"
+                onClick={handleSubmit(onSubmit)}
+                disabled={isSubmitting || mutation.isPending}
+                className="gap-1.5 font-medium shadow-xs"
+              >
+                {isSubmitting || mutation.isPending ? (
+                  <Spinner className="size-3.5" />
+                ) : (
+                  <CheckCircle2 className="size-3.5" />
+                )}
+                Confirm
+              </Button>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <CardContent className="pt-6">
+          <form id="analytic-account-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {serverError && (
               <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                 {serverError}
