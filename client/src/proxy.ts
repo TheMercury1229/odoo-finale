@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ["/signin", "/signup", "/forgot-password"];
+const publicRoutes = ["/", "/signin", "/signup", "/forgot-password"];
 
 function isPublicRoute(pathname: string) {
+  if (pathname === "/") return true;
   return publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
@@ -56,7 +57,7 @@ export async function proxy(request: NextRequest) {
   const isPublic = isPublicRoute(pathname) || isAcceptInviteRoute;
   const session = await getSessionState(request);
 
-  if (isPublic && session.isAuthenticated && !isAcceptInviteRoute) {
+  if (isPublic && session.isAuthenticated && !isAcceptInviteRoute && pathname !== "/") {
     return NextResponse.redirect(
       new URL(getHomeRoute(session.role), request.url),
     );
@@ -66,12 +67,6 @@ export async function proxy(request: NextRequest) {
     const signInUrl = new URL("/signin", request.url);
     signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);
-  }
-
-  if (session.isAuthenticated && pathname === "/") {
-    return NextResponse.redirect(
-      new URL(getHomeRoute(session.role), request.url),
-    );
   }
 
   const isProfileRoute = pathname === "/profile" || pathname.startsWith("/profile/");

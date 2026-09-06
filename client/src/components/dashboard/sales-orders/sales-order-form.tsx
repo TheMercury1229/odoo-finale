@@ -33,6 +33,8 @@ import {
   type SalesOrder,
   type SalesOrderStatus,
 } from "./sales-orders-api";
+import { ReceiptPrefillButton } from "@/components/dashboard/receipt-scanner/receipt-prefill-button";
+import type { ExtractedReceiptData } from "@/actions/scan-receipt";
 import { getSalesOrderStatusBadge } from "./sales-orders-view";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -333,6 +335,81 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
     }
   };
 
+  // Prefill handler from scanned receipt (Gemini 3.5 Flash Lite)
+  const handleReceiptExtracted = (data: ExtractedReceiptData) => {
+    // 1. Customer matching
+    if (data.partyName && customers.length > 0) {
+      const search = data.partyName.toLowerCase().trim();
+      const matchedCustomer =
+        customers.find(
+          (c) =>
+            c.name.toLowerCase().includes(search) ||
+            search.includes(c.name.toLowerCase()),
+        ) ||
+        customers.find((c) => {
+          const words = search.split(/\s+/).filter((w) => w.length >= 3);
+          return words.some((w) => c.name.toLowerCase().includes(w));
+        });
+
+      if (matchedCustomer) {
+        setValue("customerId", matchedCustomer.id, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      }
+    }
+
+    // 2. Order date matching
+    if (data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+      setValue("orderDate", data.date, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+
+    // 3. Line items matching
+    if (data.lines && data.lines.length > 0 && unarchivedProducts.length > 0) {
+      const newLines = data.lines.map((extractedLine) => {
+        const desc = extractedLine.description.toLowerCase().trim();
+        const matchedProduct =
+          unarchivedProducts.find(
+            (p) =>
+              p.name.toLowerCase().includes(desc) ||
+              desc.includes(p.name.toLowerCase()),
+          ) ||
+          unarchivedProducts.find((p) => {
+            const words = desc.split(/\s+/).filter((w) => w.length >= 3);
+            return words.some((w) => p.name.toLowerCase().includes(w));
+          }) ||
+          unarchivedProducts[0];
+
+        const unitPrice =
+          extractedLine.unitPrice > 0
+            ? extractedLine.unitPrice
+            : parseFloat(String(matchedProduct?.salesPrice || 0)) || 0;
+
+        const quantity = Math.max(0.01, extractedLine.quantity || 1);
+        const taxRate =
+          extractedLine.taxRate != null ? Number(extractedLine.taxRate) : 0;
+        const taxAmount =
+          Math.round(quantity * unitPrice * (taxRate / 100) * 100) / 100;
+
+        return {
+          productId: matchedProduct ? matchedProduct.id : "",
+          analyticAccountId: null,
+          quantity,
+          unitPrice: Number(unitPrice),
+          taxAmount,
+        };
+      });
+
+      setValue("lines", newLines, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  };
+
   // Form Submission (Create or Update)
   const onSubmit = async (data: FormValues) => {
     if (isSubmitting) return;
@@ -433,7 +510,17 @@ export function SalesOrderForm({ initialSo }: SalesOrderFormProps) {
     <div className="flex min-w-0 w-full flex-1 flex-col gap-6 pb-16">
       {/* ─── Top Bar Actions ─── */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
-        {/* Left Action Buttons */}
+        {/* Left Action: Auto-Fill from Receipt */}
+        <div className="flex flex-wrap items-center gap-2">
+          {!isReadOnly && canCreate && (
+            <ReceiptPrefillButton
+              onExtracted={handleReceiptExtracted}
+              disabled={isSubmitting}
+            />
+          )}
+        </div>
+
+        {/* Right Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 ml-auto">
           {/* On CREATE form (!isExisting): Only show "Save Draft" */}
           {!isExisting && canCreate && (
