@@ -4,7 +4,13 @@ const contactType = z.enum(["customer", "vendor", "both"]);
 const contactFields = {
   name: z.string().trim().min(1, "Name is required"),
   type: contactType,
-  email: z.email("Email must be valid").optional(),
+  email: z
+    .string()
+    .trim()
+    .email("Email must be valid")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
   mobile: z.string().optional(),
   addressCity: z.string().optional(),
   addressState: z.string().optional(),
@@ -15,8 +21,6 @@ const contactFields = {
 export const createContactSchema = z
   .object({
     ...contactFields,
-    // Email is required because every contact must have a portal user account.
-    email: z.email("Email is required and must be valid"),
     // Password is auto-generated server-side if not provided
     password: z
       .string()

@@ -14,6 +14,8 @@ export interface Contact {
   profileImageUrl?: string | null;
   userId?: string | null;
   isArchived: boolean;
+  portalStatus?: "active" | "pending" | "not_invited";
+  pendingInvitationId?: string | null;
 }
 
 interface ContactListResponse {
@@ -30,14 +32,13 @@ export type ContactListResult = ContactListResponse | ContactKanbanResponse;
 
 export interface ContactPayload {
   name: string;
-  email: string;
+  email?: string | null;
   mobile?: string;
   type: ContactType;
   addressCity?: string;
   addressState?: string;
   addressPincode?: string;
   profileImageUrl?: string;
-  // Optional password for the portal user account (auto-generated server-side if omitted)
   password?: string;
 }
 
@@ -81,6 +82,14 @@ export async function updateContact(
 export async function setContactArchived(id: string, archived: boolean) {
   const { data } = await api.patch<Contact>(
     `/api/contacts/${id}/${archived ? "archive" : "unarchive"}`,
+    {},
+  );
+  return data;
+}
+
+export async function inviteContact(id: string) {
+  const { data } = await api.post<{ success: boolean; message: string }>(
+    `/api/contacts/${id}/invite`,
     {},
   );
   return data;

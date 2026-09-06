@@ -10,9 +10,12 @@ import {
   Archive,
   ArchiveRestore,
   Check,
+  CheckCircle2,
+  Clock,
   Mail,
   MapPin,
   Phone,
+  Send,
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -25,6 +28,7 @@ import type {
 } from "@/components/dashboard/contacts/contacts-api";
 import {
   createContact,
+  inviteContact,
   setContactArchived,
   updateContact,
 } from "@/components/dashboard/contacts/contacts-api";
@@ -63,26 +67,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useUserPermissions } from "@/lib/use-user-permissions";
 import { toast } from "@/components/ui/toast";
 
-const contactFormSchema = z.object({
-  name: z.string().trim().min(1, "Contact name is required."),
-  email: z
-    .string()
-    .trim()
-    .min(1, "Email is required for the contact and portal user account.")
-    .email("Enter a valid email address."),
-  mobile: z.string().optional(),
-  type: z.enum(["customer", "vendor", "both"], {
-    message: "Select a contact type.",
-  }),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  pincode: z.string().optional(),
-  profileImageUrl: z.string().optional(),
-  isEditing: z.boolean(),
-});
+const contactFormSchema = z
+  .object({
+    name: z.string().trim().min(1, "Contact name is required."),
+    inviteToPortal: z.boolean(),
+    email: z.string().trim().optional(),
+    mobile: z.string().optional(),
+    type: z.enum(["customer", "vendor", "both"], {
+      message: "Select a contact type.",
+    }),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    pincode: z.string().optional(),
+    profileImageUrl: z.string().optional(),
+    isEditing: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.inviteToPortal) {
+      if (!data.email || data.email.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["email"],
+          message: "Email is required to invite this contact to the portal.",
+        });
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["email"],
+          message: "Enter a valid email address.",
+        });
+      }
+    } else if (data.email && data.email.trim() !== "") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["email"],
+          message: "Enter a valid email address.",
+        });
+      }
+    }
+  });
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
@@ -91,8 +119,14 @@ interface ContactFormProps {
 }
 
 function getDefaultValues(contact?: Contact): ContactFormValues {
+  const hasPortal = Boolean(
+    contact?.userId ||
+      contact?.portalStatus === "pending" ||
+      (contact?.email && contact.email.trim().length > 0),
+  );
   return {
     name: contact?.name || "",
+    inviteToPortal: hasPortal,
     email: contact?.email || "",
     mobile: contact?.mobile || "",
     type: contact?.type || "customer",
@@ -107,7 +141,11 @@ function getDefaultValues(contact?: Contact): ContactFormValues {
 function toPayload(values: ContactFormValues): ContactPayload {
   return {
     name: values.name.trim(),
-    email: values.email.trim(),
+    email: values.inviteToPortal
+      ? values.email?.trim() || undefined
+      : values.isEditing
+        ? null
+        : undefined,
     type: values.type,
     mobile: values.mobile?.trim() || undefined,
     addressCity: values.city?.trim() || undefined,
@@ -130,6 +168,8 @@ export function ContactForm({ contact }: ContactFormProps) {
     defaultValues: getDefaultValues(contact),
   });
 
+  const watchInvite = form.watch("inviteToPortal");
+
   const prevContactIdRef = useRef<string | undefined>(contact?.id);
 
   useEffect(() => {
@@ -151,7 +191,7 @@ export function ContactForm({ contact }: ContactFormProps) {
         title: isEditing ? "Contact updated" : "Contact created",
         description: isEditing
           ? "Contact details have been updated."
-          : "Contact and portal user account created successfully.",
+          : "Contact created and invitation email dispatched.",
       });
       router.push("/contacts");
     },
@@ -199,35 +239,109 @@ export function ContactForm({ contact }: ContactFormProps) {
     },
   });
 
+  const inviteMutation = useMutation({
+    mutationFn: () => inviteContact(contact!.id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", contact?.id] });
+      toast.add({
+        type: "success",
+        title: "Invitation sent",
+        description: data.message || "Invitation email dispatched to contact.",
+      });
+    },
+    onError: (error) => {
+      toast.add({
+        type: "error",
+        title: "Failed to send invitation",
+        description:
+          axios.isAxiosError(error) && error.response?.data?.error
+            ? error.response.data.error
+            : "Could not send invitation email. Please try again.",
+      });
+    },
+  });
+
   return (
     <div className="mx-auto flex w-full  flex-col gap-6">
       {/* ─── Top action bar ─── */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div className="flex items-center gap-3">
-
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-lg font-semibold tracking-tight">
                 {isEditing ? contact?.name : "New Contact"}
               </h1>
               {isEditing && (
-                <Badge
-                  variant={contact?.isArchived ? "destructive" : "secondary"}
-                  className="text-xs font-normal capitalize"
-                >
-                  {contact?.isArchived ? "Archived" : "Active"}
-                </Badge>
+                <>
+                  <Badge
+                    variant={contact?.isArchived ? "destructive" : "secondary"}
+                    className="text-xs font-normal capitalize"
+                  >
+                    {contact?.isArchived ? "Archived" : "Active"}
+                  </Badge>
+                  {contact?.userId ? (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-xs font-normal text-emerald-700 dark:text-emerald-300"
+                    >
+                      <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
+                      Portal access active
+                    </Badge>
+                  ) : contact?.portalStatus === "pending" ? (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-amber-500/30 bg-amber-500/10 text-xs font-normal text-amber-700 dark:text-amber-300"
+                    >
+                      <Clock className="size-3 text-amber-600 dark:text-amber-400" />
+                      Invitation pending
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal text-muted-foreground"
+                    >
+                      Not invited
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
             <p className="text-xs text-muted-foreground">
               {isEditing
-                ? "Update contact information and address"
-                : "Create a contact and automatically provision their portal account"}
+                ? "Update contact information and portal access"
+                : "Create a contact and invite them to the customer/vendor portal"}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {isEditing &&
+            canEditMasterData &&
+            !contact?.userId &&
+            !contact?.isArchived &&
+            contact?.email && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => inviteMutation.mutate()}
+              disabled={
+                inviteMutation.isPending ||
+                saveMutation.isPending ||
+                archiveMutation.isPending
+              }
+            >
+              <Send className="size-3.5" />
+              {inviteMutation.isPending
+                ? "Sending..."
+                : contact?.portalStatus === "pending"
+                  ? "Resend Invite"
+                  : "Invite to Portal"}
+            </Button>
+          )}
+
           {isEditing && isAdmin ? (
             <Button
               type="button"
@@ -235,7 +349,11 @@ export function ContactForm({ contact }: ContactFormProps) {
               size="sm"
               className="gap-1.5"
               onClick={() => setArchiveOpen(true)}
-              disabled={saveMutation.isPending || archiveMutation.isPending}
+              disabled={
+                saveMutation.isPending ||
+                archiveMutation.isPending ||
+                inviteMutation.isPending
+              }
             >
               {contact!.isArchived ? (
                 <ArchiveRestore className="size-4" />
@@ -251,7 +369,11 @@ export function ContactForm({ contact }: ContactFormProps) {
             variant="outline"
             size="sm"
             onClick={() => router.push("/contacts")}
-            disabled={saveMutation.isPending || archiveMutation.isPending}
+            disabled={
+              saveMutation.isPending ||
+              archiveMutation.isPending ||
+              inviteMutation.isPending
+            }
           >
             Cancel
           </Button>
@@ -262,7 +384,11 @@ export function ContactForm({ contact }: ContactFormProps) {
               form="contact-form"
               size="sm"
               className="gap-1.5"
-              disabled={saveMutation.isPending || archiveMutation.isPending}
+              disabled={
+                saveMutation.isPending ||
+                archiveMutation.isPending ||
+                inviteMutation.isPending
+              }
             >
               <Check className="size-4" />
               {saveMutation.isPending
@@ -387,24 +513,89 @@ export function ContactForm({ contact }: ContactFormProps) {
                 </Field>
               </div>
 
-              {/* Email with inline portal account note */}
-              <Field data-invalid={!!form.formState.errors.email}>
-                <FieldLabel htmlFor="email" className="flex items-center gap-1.5">
-                  <Mail className="size-3.5 text-muted-foreground" />
-                  Email Address *
-                </FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="user@example.com"
-                  {...form.register("email")}
-                  aria-invalid={!!form.formState.errors.email}
-                />
-                <FieldDescription className="text-xs">
-                  Portal login will be created automatically using this email address.
-                </FieldDescription>
-                <FieldError errors={[form.formState.errors.email]} />
-              </Field>
+              {/* Portal Access & Invitation Switch */}
+              <div className="rounded-lg border bg-muted/20 p-4 transition-all">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <Mail className="size-4 text-primary" />
+                      <span className="text-sm font-medium">
+                        Invite to Portal
+                      </span>
+                      {contact?.userId ? (
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-[11px] font-normal text-emerald-700 dark:text-emerald-300"
+                        >
+                          <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
+                          Active
+                        </Badge>
+                      ) : contact?.portalStatus === "pending" ? (
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-amber-500/30 bg-amber-500/10 text-[11px] font-normal text-amber-700 dark:text-amber-300"
+                        >
+                          <Clock className="size-3 text-amber-600 dark:text-amber-400" />
+                          Pending
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {contact?.userId
+                        ? "This contact has an active portal account linked to their user login."
+                        : "Enable to invite this contact to access their customer/vendor portal."}
+                    </p>
+                  </div>
+
+                  <Controller
+                    control={form.control}
+                    name="inviteToPortal"
+                    render={({ field }) => (
+                      <Switch
+                        id="invite-to-portal-switch"
+                        checked={field.value}
+                        disabled={Boolean(contact?.userId)}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (!checked && !contact?.userId) {
+                            form.setValue("email", "");
+                            form.clearErrors("email");
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* When switch is clicked (ON), ask for email */}
+                {watchInvite && (
+                  <div className="mt-4 border-t pt-4">
+                    <Field data-invalid={!!form.formState.errors.email}>
+                      <FieldLabel
+                        htmlFor="email"
+                        className="flex items-center gap-1.5"
+                      >
+                        <Mail className="size-3.5 text-muted-foreground" />
+                        Email Address *
+                      </FieldLabel>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="contact@company.com"
+                        disabled={Boolean(contact?.userId)}
+                        {...form.register("email")}
+                        aria-invalid={!!form.formState.errors.email}
+                      />
+                      <FieldDescription className="text-xs">
+                        {contact?.userId
+                          ? "Linked portal user account email."
+                          : "An invitation email will be sent to this address to set up their portal access."}
+                      </FieldDescription>
+                      <FieldError errors={[form.formState.errors.email]} />
+                    </Field>
+                  </div>
+                )}
+              </div>
             </FieldGroup>
           </CardContent>
         </Card>

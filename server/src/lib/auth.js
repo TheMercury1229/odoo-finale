@@ -7,6 +7,8 @@ import envVars from "../config/env.js";
 import { admin, organization } from "better-auth/plugins";
 import { ac, accountantRole, adminRole, contactRole } from "./permissions.js";
 
+import { sendInvitationEmail } from "./email.js";
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -52,6 +54,17 @@ export const auth = betterAuth({
       },
       allowUserToCreateOrganization: false, // single seeded org only
       creatorRole: "admin",
+      async sendInvitationEmail(data) {
+        const clientBase =
+          process.env.APP_URL || envVars.CLIENT_URL || "http://localhost:3000";
+        const inviteLink = `${clientBase}/accept-invite?id=${data.id}`;
+        await sendInvitationEmail({
+          to: data.email,
+          inviterName: data.inviter?.user?.name || data.inviter?.user?.email,
+          organizationName: data.organization?.name || "Urban Furniture",
+          inviteLink,
+        });
+      },
     }),
   ],
 });

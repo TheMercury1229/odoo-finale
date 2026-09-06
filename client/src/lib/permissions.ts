@@ -74,6 +74,7 @@ export const accountantRole = ac.newRole({
     "record_payment",
   ],
   report: ["view"],
+  invitation: ["create", "cancel"],
 });
 
 // Contact (Customer/Vendor portal user): only their own invoices/bills,

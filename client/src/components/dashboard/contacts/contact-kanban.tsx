@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Archive, Mail, Phone, Users } from "lucide-react";
+import { Archive, CheckCircle2, Clock, Mail, Phone, Users } from "lucide-react";
 
 import type { Contact } from "@/components/dashboard/contacts/contacts-api";
 import { ContactAvatar } from "@/components/dashboard/contacts/contact-avatar";
@@ -53,15 +53,34 @@ export function ContactKanban({ contacts }: ContactKanbanProps) {
                         <CardTitle className="truncate">
                           {contact.name}
                         </CardTitle>
-                        {contact.isArchived ? (
-                          <Badge
-                            variant="destructive"
-                            className="mt-1 w-fit gap-1 text-[10px] leading-none"
-                          >
-                            <Archive className="size-2.5" />
-                            Archived
-                          </Badge>
-                        ) : null}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          {contact.isArchived ? (
+                            <Badge
+                              variant="destructive"
+                              className="gap-1 text-[10px] leading-none"
+                            >
+                              <Archive className="size-2.5" />
+                              Archived
+                            </Badge>
+                          ) : null}
+                          {contact.userId ? (
+                            <Badge
+                              variant="outline"
+                              className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-[10px] leading-none font-normal text-emerald-700 dark:text-emerald-300"
+                            >
+                              <CheckCircle2 className="size-2.5 text-emerald-600 dark:text-emerald-400" />
+                              Active
+                            </Badge>
+                          ) : contact.portalStatus === "pending" ? (
+                            <Badge
+                              variant="outline"
+                              className="gap-1 border-amber-500/30 bg-amber-500/10 text-[10px] leading-none font-normal text-amber-700 dark:text-amber-300"
+                            >
+                              <Clock className="size-2.5 text-amber-600 dark:text-amber-400" />
+                              Invite Pending
+                            </Badge>
+                          ) : null}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">

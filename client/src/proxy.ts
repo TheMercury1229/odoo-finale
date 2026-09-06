@@ -51,10 +51,12 @@ function getHomeRoute(role?: string | null) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublic = isPublicRoute(pathname);
+  const isAcceptInviteRoute =
+    pathname === "/accept-invite" || pathname.startsWith("/accept-invite/");
+  const isPublic = isPublicRoute(pathname) || isAcceptInviteRoute;
   const session = await getSessionState(request);
 
-  if (isPublic && session.isAuthenticated) {
+  if (isPublic && session.isAuthenticated && !isAcceptInviteRoute) {
     return NextResponse.redirect(
       new URL(getHomeRoute(session.role), request.url),
     );
@@ -78,7 +80,8 @@ export async function proxy(request: NextRequest) {
     session.isAuthenticated &&
     session.role === "contact" &&
     !pathname.startsWith("/portal") &&
-    !isProfileRoute
+    !isProfileRoute &&
+    !isAcceptInviteRoute
   ) {
     return NextResponse.redirect(new URL("/portal/invoices", request.url));
   }
